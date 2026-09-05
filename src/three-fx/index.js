@@ -92,17 +92,23 @@ export function celebrateCorrect() {
 /**
  * 過關展示動畫。
  *
+ * Phase 1 契約更新（凍結，供 Agent 4 呼叫）：新增第二參數 `{ onLidOpen }`，
+ * 因為 'chest' 動畫需要在蓋子掀開瞬間精準通知呼叫端彈出貼紙揭曉視窗，
+ * 呼叫端不應該自己用 setTimeout 猜時間。'showcase' 不會觸發這個回呼。
+ *
  * @param {'showcase'|'chest'} [kind='showcase'] - 'showcase'：一般過關，
  *   獎盃／禮物盒隨機展示旋轉（對應一代 celebrateLevelComplete()）；
- *   'chest'：首次三星過關的開寶箱動畫（對應一代 celebrateChestOpen()，
- *   蓋子掀開瞬間要能觸發一個 onLidOpen 回呼讓貼紙彈窗準時彈出，
- *   而不是呼叫端自己用 setTimeout 猜時間）。
+ *   'chest'：首次三星過關的開寶箱動畫（對應一代 celebrateChestOpen()）。
+ * @param {{onLidOpen?:()=>void}} [callbacks] - 'chest' 動畫蓋子掀開瞬間呼叫
+ *   `onLidOpen()`；如果中途被 `cancelCelebration()` 打斷，`onLidOpen`
+ *   不能再被呼叫（一代 CLAUDE.md 明確記錄的坑：貼紙彈窗晚一拍蓋在下個畫面上）。
  * @returns {void}
  */
-export function celebrateLevelComplete(kind = 'showcase') {
+export function celebrateLevelComplete(kind = 'showcase', callbacks = {}) {
   // TODO Phase 2：從 拼字遊戲/three-fx.js 的 celebrateLevelComplete() /
   // celebrateChestOpen() 搬邏輯過來，並統一成這一個函式用 kind 參數分流
-  // （一代是兩支獨立的對外函式，二代先合併成一支，行為不變）。
+  // （一代是兩支獨立的對外函式，二代先合併成一支，行為不變），開寶箱動畫
+  // 蓋子掀開的那一刻呼叫 `callbacks.onLidOpen && callbacks.onLidOpen()`。
 }
 
 /**
