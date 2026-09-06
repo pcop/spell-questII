@@ -1,9 +1,16 @@
-# three-fx 技術筆記（給 Phase 2 用，非對外文件）
+# three-fx 技術筆記（非對外文件）
 
-這份筆記不是使用者文件，是給之後真正把特效邏輯從一代搬過來的人看的
-「踩過的雷」清單。目前 `index.js` 只是 Phase 0 骨架（函式簽名 + stub +
-TODO 註解），實際特效邏輯（粒子系統、低多邊形模型、動畫迴圈）排在
-**Phase 2** 才搬。
+這份筆記不是使用者文件，是「踩過的雷」清單，給之後維護這個模組的人看。
+Phase 2 已經把一代的特效邏輯（粒子系統、低多邊形模型、動畫迴圈）搬過來，
+拆成四支檔案：
+
+- `index.js` — 對外 4 個 export（`initThreeFx`/`celebrateCorrect`/
+  `celebrateLevelComplete`/`cancelCelebration`），持有 scene/camera/
+  renderer/points/models 等模組層級狀態，以及統一的 `tick()` 動畫迴圈。
+- `textures.js` — 答對特效用的四種 Canvas 貼圖（dot/star/confetti/heart）。
+- `models.js` — 過關獎勵的三個低多邊形手刻模型（獎盃/禮物盒/寶箱）。
+- `particles.js` — 粒子物理（`burst`/`advanceParticles`）與五種答對特效
+  的造型定義（`CORRECT_EFFECTS`/`pickCorrectEffect`）。
 
 ## 為什麼改成 npm 依賴，不用 CDN importmap
 
@@ -73,16 +80,27 @@ defer），跟 `app.js` 之間沒有直接的函式呼叫關係，只能靠全�
 不用擔心監聽器註冊時機的競速問題。`resolve(true)` 對應一代的
 `threefx-ready`，`resolve(false)`／reject 對應一代的 `threefx-error`。
 
-## 現況
+## 現況（Phase 2 已完成搬遷）
 
-`index.js` 目前只有：
-- 踩雷點註解（開頭大段註解，涵蓋上面三點）
-- `initThreeFx(container)` — stub，目前直接 throw，TODO 註明要從一代
-  `initScene()` 搬邏輯
-- `celebrateCorrect()` — stub
-- `celebrateLevelComplete(kind)` — stub，用 `kind` 參數把一代兩支獨立
-  函式（`celebrateLevelComplete` / `celebrateChestOpen`）合併成一支
-- `cancelCelebration()` — stub
+- `initThreeFx(container)` — 建 scene/正交相機/renderer，掛到傳入的
+  `container` 底下，加光源、建粒子 BufferGeometry/PointsMaterial、呼叫
+  `buildModels()`，`renderer.render()` 立即渲染一次驗證 WebGL 真的可用，
+  整段包在 try/catch，任何錯誤（含裝置不支援 WebGL）都 `return false`
+  而不是往外拋；也註冊了 `window resize` 監聽（`onResize()`）。
+- `celebrateCorrect()` — 用 `pickCorrectEffect()` 從 `CORRECT_EFFECTS`
+  五選一（避免連續重複），切貼圖/size 後記得設
+  `material.needsUpdate = true`，再呼叫 `burst()` 觸發粒子噴發。
+- `celebrateLevelComplete(kind, callbacks)` — `kind='showcase'`：獎盃/
+  禮物盒隨機挑一個展示旋轉；`kind='chest'`：播放開寶箱動畫，`tick()`
+  裡逐幀追蹤 `lidGroup.rotation.x` 的掀蓋進度（`lidProgress`），進度
+  剛好到 1（蓋子視覺上真的掀開的那一刻）才呼叫
+  `callbacks.onLidOpen()`——不是用 `setTimeout` 猜時間。
+- `cancelCelebration()` — 清空粒子 `drawRange`、呼叫 `hideActiveModel()`
+  把 `activeModel` 設回 `null`，讓還沒觸發的 `onLidOpen` 永遠不會再被
+  `tick()` 呼叫到。
 
-真正的粒子系統、低多邊形模型建構、動畫迴圈（`tick()`）都還沒搬，這些是
-Phase 2「架構升級」的工作範圍。
+已用 `node --check` 確認四支檔案語法正確，並用 `npx vite build`
+（含一次以 `index.js` 為 entry 的臨時建置）驗證 `import * as THREE from
+'three'` 能正確 resolve、整個模組能被 bundle 打包。因為 vitest 的 node
+環境沒有真實 WebGL context，這個模組沒有寫自動化測試（跟 Phase 0 的
+決定一致）。

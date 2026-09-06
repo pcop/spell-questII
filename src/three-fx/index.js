@@ -1,4 +1,4 @@
-// 純裝飾性 WebGL 特效層（骨架，Phase 0）。
+// 純裝飾性 WebGL 特效層（骨架，Phase 0；邏輯已於 Phase 2 從一代搬過來）。
 //
 // 這支模組永遠不能讓遊戲的核心功能「靜默」失敗——WebGL 不支援時，
 // initThreeFx() 必須明確回傳 false（或 reject），讓呼叫端（未來的
@@ -49,6 +49,85 @@
 // ---------------------------------------------------------------------
 
 import * as THREE from 'three';
+import { buildTextures } from './textures.js';
+import { buildModels } from './models.js';
+import { MAX_PARTICLES, pickCorrectEffect, burst, advanceParticles } from './particles.js';
+
+// 模組層級狀態（同一份場景/渲染器整個生命週期只建一次，見 initThreeFx()）。
+let scene = null;
+let camera = null;
+let renderer = null;
+let points = null;
+let models = null; // { trophy, gift, chest, chestLid }
+let textures = null; // { dot, star, confetti, heart }
+let baseParticleSize = 0; // 40 * pixelRatio，換算好存起來，切造型時只需再乘各組的 sizeScale
+let activeParticles = null;
+let activeModel = null;
+let rafId = null;
+let resizeHandler = null;
+
+function onResize() {
+  camera.left = window.innerWidth / -2;
+  camera.right = window.innerWidth / 2;
+  camera.top = window.innerHeight / 2;
+  camera.bottom = window.innerHeight / -2;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+}
+
+function ensureLoop() {
+  if (rafId === null) rafId = requestAnimationFrame(tick);
+}
+
+function hideActiveModel() {
+  if (activeModel && activeModel.group) activeModel.group.visible = false;
+  activeModel = null;
+}
+
+// 統一的渲染迴圈：粒子（答對用）跟模型展示（過關用）理論上不會同時觸發
+// （分屬遊戲畫面跟結果畫面），但兩邊各自獨立判斷是否還在播，避免其中一個
+// 播完就把另一個也一起中斷掉。
+function tick(now) {
+  let stillActive = false;
+  const dt = 1 / 60;
+
+  if (activeParticles) {
+    stillActive = true;
+    const stillPlaying = advanceParticles(points, activeParticles, dt, now);
+    if (!stillPlaying) {
+      activeParticles = null;
+    }
+  }
+
+  if (activeModel) {
+    stillActive = true;
+    const m = activeModel;
+    const mElapsed = now - m.startTime;
+    m.group.rotation.y += m.rotateSpeed * dt;
+    if (m.kind === 'chest' && !m.opened) {
+      const lidProgress = Math.min(mElapsed / m.lidDuration, 1);
+      m.lidGroup.rotation.x = -lidProgress * Math.PI * 0.58;
+      if (lidProgress >= 1) {
+        m.opened = true;
+        if (m.onLidOpen) {
+          // 裝飾層絕不能讓呼叫端的回呼錯誤把這裡也拖垮，出事只印警告。
+          try {
+            m.onLidOpen();
+          } catch (err) {
+            console.warn('開寶箱回呼發生錯誤，不影響遊戲本身', err);
+          }
+        }
+      }
+    }
+    if (mElapsed >= m.duration) {
+      m.group.visible = false;
+      activeModel = null;
+    }
+  }
+
+  renderer.render(scene, camera);
+  rafId = stillActive ? requestAnimationFrame(tick) : null;
+}
 
 /**
  * 建立 renderer / scene / 正交相機，掛到 container 底下。
@@ -60,21 +139,64 @@ import * as THREE from 'three';
  *   或初始化失敗，呼叫端應鎖住拼字關卡（沿用一代行為，不做 2D 備援）。
  */
 export async function initThreeFx(container) {
-  // TODO Phase 2：從 拼字遊戲/three-fx.js 的 initScene() 搬邏輯過來：
-  //   - new THREE.Scene()
-  //   - new THREE.OrthographicCamera(...)（座標空間對應 window.innerWidth/innerHeight）
-  //   - new THREE.WebGLRenderer({ alpha: true, antialias: true })
-  //   - renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2))
-  //   - AmbientLight + DirectionalLight（見上方踩雷點 3）
-  //   - 建立粒子 BufferGeometry/PointsMaterial（見上方踩雷點 1、2；
-  //     size 才要乘 pixelRatio）
-  //   - buildModels()（獎盃/禮物盒/寶箱，見一代 buildTrophyModel 等函式；
-  //     幾何尺寸維持原始數值，不要乘 pixelRatio，見上方踩雷點 2 的說明）
-  //   - renderer.render(scene, camera) 立即渲染一次，及早驗證 WebGL context 真的可用
-  //   - 用 try/catch 包住整個初始化，抓到任何錯誤就 resolve(false)（或 reject），
-  //     不要讓例外往外拋炸掉呼叫端。
-  //   - 記得也要處理 window resize（一代的 onResize()）。
-  throw new Error('initThreeFx: not implemented yet (Phase 0 骨架, Phase 2 才會搬邏輯)');
+  try {
+    if (!container) return false;
+
+    scene = new THREE.Scene();
+    camera = new THREE.OrthographicCamera(
+      window.innerWidth / -2, window.innerWidth / 2,
+      window.innerHeight / 2, window.innerHeight / -2,
+      1, 1000
+    );
+    camera.position.z = 100;
+
+    renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    container.appendChild(renderer.domElement);
+
+    resizeHandler = onResize;
+    window.addEventListener('resize', resizeHandler);
+
+    // 過關獎勵模型用 MeshStandardMaterial，需要實際光源才會有立體明暗，
+    // 粒子系統用的 PointsMaterial 不吃光源（見上方踩雷點 3）。
+    scene.add(new THREE.AmbientLight(0xffffff, 0.75));
+    const dirLight = new THREE.DirectionalLight(0xffffff, 0.9);
+    dirLight.position.set(150, 260, 400);
+    scene.add(dirLight);
+
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(MAX_PARTICLES * 3), 3));
+    geometry.setAttribute('color', new THREE.BufferAttribute(new Float32Array(MAX_PARTICLES * 3), 3));
+    geometry.setDrawRange(0, 0);
+
+    textures = buildTextures();
+    baseParticleSize = 40 * renderer.getPixelRatio();
+
+    const material = new THREE.PointsMaterial({
+      // sizeAttenuation:false 時 size 是 framebuffer 像素，要乘 pixelRatio
+      // 才能讓外觀大小在不同螢幕密度下一致（見上方踩雷點 2）。
+      size: baseParticleSize,
+      map: textures.dot,
+      vertexColors: true,
+      transparent: true,
+      depthWrite: false,
+      // 正交相機不套用透視相機的「越遠越小」縮放公式（見上方踩雷點 1）。
+      sizeAttenuation: false
+    });
+
+    points = new THREE.Points(geometry, material);
+    scene.add(points);
+
+    models = buildModels(scene);
+
+    renderer.render(scene, camera); // 立即渲染一次，及早驗證 WebGL context 真的可用
+    return true;
+  } catch (err) {
+    console.warn('三維特效初始化失敗，拼字遊戲關卡會被暫時鎖住。', err);
+    return false;
+  }
 }
 
 /**
@@ -83,10 +205,17 @@ export async function initThreeFx(container) {
  * @returns {void}
  */
 export function celebrateCorrect() {
-  // TODO Phase 2：從 拼字遊戲/three-fx.js 的 celebrateCorrect() + burst() +
-  // CORRECT_EFFECTS 陣列 + pickCorrectEffect() 搬邏輯過來。
-  // 注意：材質（PointsMaterial）只有一份、所有粒子共用，切換造型的貼圖後
-  // 記得設 `material.needsUpdate = true`，否則 three.js 不會重新綁定新的 map。
+  if (!points) return; // initThreeFx 尚未成功初始化，裝飾層安靜跳過
+  const effect = pickCorrectEffect();
+  // 材質（PointsMaterial）只有一份、所有粒子共用，切到新造型的貼圖後
+  // 一定要設 needsUpdate，否則 three.js 不會重新綁定新的 map。
+  points.material.map = textures[effect.textureKey];
+  points.material.size = baseParticleSize * (effect.sizeScale || 1);
+  points.material.needsUpdate = true;
+  const opts = effect.buildOpts();
+  opts.palette = effect.palette;
+  activeParticles = burst(points, 60, opts);
+  ensureLoop();
 }
 
 /**
@@ -105,10 +234,38 @@ export function celebrateCorrect() {
  * @returns {void}
  */
 export function celebrateLevelComplete(kind = 'showcase', callbacks = {}) {
-  // TODO Phase 2：從 拼字遊戲/three-fx.js 的 celebrateLevelComplete() /
-  // celebrateChestOpen() 搬邏輯過來，並統一成這一個函式用 kind 參數分流
-  // （一代是兩支獨立的對外函式，二代先合併成一支，行為不變），開寶箱動畫
-  // 蓋子掀開的那一刻呼叫 `callbacks.onLidOpen && callbacks.onLidOpen()`。
+  if (!models) return; // initThreeFx 尚未成功初始化，裝飾層安靜跳過
+  hideActiveModel();
+
+  if (kind === 'chest') {
+    models.chest.rotation.set(0, 0, 0);
+    models.chestLid.rotation.x = 0;
+    models.chest.visible = true;
+    activeModel = {
+      group: models.chest,
+      kind: 'chest',
+      lidGroup: models.chestLid,
+      startTime: performance.now(),
+      duration: 2400,
+      rotateSpeed: 0.3,
+      lidDuration: 700,
+      opened: false,
+      onLidOpen: callbacks.onLidOpen || null
+    };
+  } else {
+    const pick = Math.random() < 0.5 ? models.trophy : models.gift;
+    pick.rotation.set(0, 0, 0);
+    pick.visible = true;
+    activeModel = {
+      group: pick,
+      kind: 'showcase',
+      startTime: performance.now(),
+      duration: 1800,
+      rotateSpeed: 1.1
+    };
+  }
+
+  ensureLoop();
 }
 
 /**
@@ -121,8 +278,11 @@ export function celebrateLevelComplete(kind = 'showcase', callbacks = {}) {
  * @returns {void}
  */
 export function cancelCelebration() {
-  // TODO Phase 2：從 拼字遊戲/three-fx.js 的 cancelCelebration() 搬邏輯過來：
-  //   - 若有 activeParticles 在播，清空 drawRange 並清掉狀態
-  //   - 呼叫 hideActiveModel()，把還在展示的模型 visible = false
-  //     並且清掉 activeModel（連帶讓還沒觸發的 onLidOpen 失效）
+  if (activeParticles && points) {
+    points.geometry.setDrawRange(0, 0);
+    activeParticles = null;
+  }
+  // hideActiveModel() 把 activeModel 設回 null，連帶讓還沒觸發的
+  // onLidOpen 一起失效（tick() 只在 activeModel 存在時才會呼叫它）。
+  hideActiveModel();
 }

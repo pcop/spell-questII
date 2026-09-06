@@ -47,17 +47,153 @@
 // 「文字提示」的東西，這是一代實測出來的三選一，見 Phase 0 進度 schema
 // agent 的驗證），讀設定時字串要對準這三個值。
 
+// 實作筆記（Agent 4）：`bindStaticEvents()` 綁定的是「凍結 HTML 裡本來就存在
+// 的靜態元素」的事件（data-nav 返回鍵、遊戲畫面固定按鈕、選難度畫面的設定
+// 按鈕、貼紙彈窗等），每個按鈕實際的業務邏輯轉呼叫 `game-flow.js` 對應的
+// export（渲染/狀態都在那邊，這裡只負責「按了這顆按鈕該呼叫誰」的接線）。
+//
+// `src/ui/flashcards.js`/`blend.js`/`progress-page.js` 是 Agent 5 平行負責
+// 的檔案，各自的頂部註解都明講自己 `bindXxxEvents()` 只綁自己畫面底下的固定
+// 按鈕、要整合階段呼叫一次——這裡把那三個呼叫收在 `bindStaticEvents()` 裡
+// （只呼叫它們的 export，沒有修改那三支檔案），連同 `handleFlashcardKeydown`
+// 一起接上，避免同一批按鈕被兩邊重複綁定。
+//
+// `main.js` 整合階段除了呼叫這裡的 `bindStaticEvents()`/`handleKeydown`，
+// 還需要額外呼叫 `game-flow.js` 匯出的 `initGameFlow()`（資料載入 + 語音初
+// 始化 + three-fx 硬性門檻檢查，等同一代 `loadGameData()`），這裡沒有自動
+// 觸發，因為契約描述 `bindStaticEvents()` 只負責「綁事件」。
+
+import {
+  cancelResultCelebration,
+  handleStartButtonClick,
+  handleFlashcardsMenuClick,
+  handleBlendMenuClick,
+  handleGameKeydown,
+  handleHintClick,
+  handleSpeakClick,
+  hideStickerModal,
+  initGameFlow,
+  leaveGame,
+  onHintModeButtonsClick,
+  onSoundToggleButtonsClick,
+  onSpeechRateButtonsClick,
+  onStickerModalBackdropClick,
+  proceedFromCorrect,
+  renderThemeGrid,
+  backToLevels,
+  replayLevel,
+} from './game-flow.js';
+
+import { bindFlashcardEvents, handleFlashcardKeydown } from './flashcards.js';
+import { bindBlendEvents } from './blend.js';
+import { bindProgressEvents, renderProgressPage } from './progress-page.js';
+
+const VIEWS = [
+  'loading', 'load-error', 'splash', 'theme-select', 'level-select',
+  'game', 'result', 'progress', 'flashcards', 'blend',
+];
+
+function $(id) {
+  return document.getElementById(id);
+}
+
 /**
  * @param {'loading'|'load-error'|'splash'|'theme-select'|'level-select'|'game'|'result'|'progress'|'flashcards'|'blend'} name
  * @returns {void}
  */
 export function showView(name) {
-  throw new Error('not implemented');
+  VIEWS.forEach((v) => {
+    const el = $('view-' + v);
+    if (el) el.hidden = v !== name;
+  });
+}
+
+let toastTimer = null;
+
+/** @param {string} msg @returns {void} */
+export function showToast(msg) {
+  const toast = $('toast');
+  if (!toast) return;
+  toast.textContent = msg;
+  toast.hidden = false;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => {
+    toast.hidden = true;
+  }, 2400);
 }
 
 /** @returns {void} */
 export function bindStaticEvents() {
-  throw new Error('not implemented');
+  // 通用返回鍵：所有畫面共用同一套 data-nav 機制。離開任何畫面前都先取消
+  // 可能還在播的過關特效/貼紙彈窗（一代 `cancelResultCelebration()` 在每個
+  // data-nav 點擊都無條件呼叫一次，避免貼紙彈窗晚半拍蓋在下個畫面上）。
+  // 回到選主題畫面時要重新渲染（星等可能剛更新過）。
+  document.querySelectorAll('[data-nav]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const target = btn.dataset.nav;
+      cancelResultCelebration();
+      if (target === 'theme-select') renderThemeGrid();
+      showView(target);
+    });
+  });
+
+  const btnStart = $('btn-start');
+  if (btnStart) btnStart.addEventListener('click', handleStartButtonClick);
+
+  const btnFlashcardsMenu = $('btn-flashcards');
+  if (btnFlashcardsMenu) btnFlashcardsMenu.addEventListener('click', handleFlashcardsMenuClick);
+
+  const btnBlendMenu = $('btn-blend');
+  if (btnBlendMenu) btnBlendMenu.addEventListener('click', handleBlendMenuClick);
+
+  const btnProgressMenu = $('btn-progress');
+  if (btnProgressMenu) {
+    btnProgressMenu.addEventListener('click', () => {
+      renderProgressPage();
+      showView('progress');
+    });
+  }
+
+  const btnRetryLoad = $('btn-retry-load');
+  if (btnRetryLoad) btnRetryLoad.addEventListener('click', initGameFlow);
+
+  const btnLeaveGame = $('btn-leave-game');
+  if (btnLeaveGame) btnLeaveGame.addEventListener('click', leaveGame);
+
+  const btnSpeak = $('btn-speak');
+  if (btnSpeak) btnSpeak.addEventListener('click', handleSpeakClick);
+
+  const btnHint = $('btn-hint');
+  if (btnHint) btnHint.addEventListener('click', handleHintClick);
+
+  const btnNextQuestion = $('btn-next-question');
+  if (btnNextQuestion) btnNextQuestion.addEventListener('click', proceedFromCorrect);
+
+  const hintModeButtons = $('hint-mode-buttons');
+  if (hintModeButtons) hintModeButtons.addEventListener('click', onHintModeButtonsClick);
+
+  const soundToggleButtons = $('sound-toggle-buttons');
+  if (soundToggleButtons) soundToggleButtons.addEventListener('click', onSoundToggleButtonsClick);
+
+  const speechRateButtons = $('speech-rate-buttons');
+  if (speechRateButtons) speechRateButtons.addEventListener('click', onSpeechRateButtonsClick);
+
+  const btnReplay = $('btn-replay');
+  if (btnReplay) btnReplay.addEventListener('click', replayLevel);
+
+  const btnBackLevels = $('btn-back-levels');
+  if (btnBackLevels) btnBackLevels.addEventListener('click', backToLevels);
+
+  const stickerModalClose = $('sticker-modal-close');
+  if (stickerModalClose) stickerModalClose.addEventListener('click', hideStickerModal);
+
+  const stickerModal = $('sticker-modal');
+  if (stickerModal) stickerModal.addEventListener('click', onStickerModalBackdropClick);
+
+  // Agent 5 的三個畫面各自的固定按鈕綁定，只應該呼叫一次。
+  bindFlashcardEvents();
+  bindBlendEvents();
+  bindProgressEvents();
 }
 
 /**
@@ -66,10 +202,12 @@ export function bindStaticEvents() {
  * @returns {void}
  */
 export function handleKeydown(e) {
-  throw new Error('not implemented');
-}
-
-/** @param {string} msg @returns {void} */
-export function showToast(msg) {
-  throw new Error('not implemented');
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+  const viewGame = $('view-game');
+  const viewFlashcards = $('view-flashcards');
+  if (viewGame && !viewGame.hidden) {
+    handleGameKeydown(e);
+  } else if (viewFlashcards && !viewFlashcards.hidden) {
+    handleFlashcardKeydown(e);
+  }
 }

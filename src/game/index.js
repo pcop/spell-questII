@@ -21,6 +21,73 @@
 // 見 Phase 0 的 `getLevelDefsForTheme()` 邏輯——一代 CLAUDE.md 特別強調
 // 這是「唯一解析主題關卡定義」的地方，長度分級 `difficultyTiers` 跟
 // `customLevels` 兩種主題都要吃）。
+//
+// ---------------------------------------------------------------------------
+// 實作筆記（本檔案已從「契約 stub」變成真正實作，內部邏輯拆到同資料夾底下）：
+//   - `./wordbank.js`   —— 主題/關卡/單字庫查詢（一代「Word bank helpers」）
+//   - `./helpers.js`    —— 洗牌／挑干擾字母／組字母方塊等純函式小工具
+//   - `./session.js`    —— 作答 session 狀態機（一代「Game flow」）
+// 這份 index.js 只負責把契約定義的 export 轉發到上面三個檔案，簽名完全不變。
+//
+// 跟契約的出入（新增項目，皆為「加法」，未移除/未更改任何既有簽名或欄位）：
+//   1. `getCurrentQuestionView()` 回傳物件多了一個 `slots` 欄位——
+//      `Array<{tileId:string|null, letter:string|null, hinted:boolean}>`。
+//      原契約只給了 `slotCount`（槽位數量），但沒有任何欄位告訴 UI「每個槽位
+//      目前填了哪個字母、是不是提示鎖定的槽位」，UI 沒有這個畫不出填字進度
+//      跟提示高亮效果，所以額外補上。
+//   2. `getCurrentQuestionView()` 回傳的 `tiles` 每個元素多了 `used:boolean`
+//      （原本只有 `id`/`letter`），UI 需要知道哪些字母方塊已經被放進槽位裡
+//      才能畫成「已使用/停用」樣式。
+//   3. 新增 export `resetForRetry(session)`：答錯後一代會等 500ms「搖晃」動畫
+//      播完才清空槽位重試（`resetSlotsKeepTiles`），但動畫時長是 UI 層的事，
+//      這份純邏輯檔案不擁有計時器。所以 `checkAnswer()` 答錯時維持
+//      `locked:true`（跟一代一樣擋住輸入），改由 UI 播完動畫後呼叫這個新
+//      export 才真的清空槽位、解鎖讓玩家重試。
+//   4. 新增 export `MIN_WORDS_PER_LEVEL`（從 `./wordbank.js` 轉出）：一代的
+//      「單字數不足自動停用關卡」門檻常數，`getLevelDefsForTheme()`/
+//      `getValidLevelCombos()` 內部已經套用這條規則，這裡額外 export 出來
+//      純粹方便 UI 或測試需要顯示/驗證這個數字時不用重新寫死一次。
+//   5. 新增 export `getFullWordBank()`（從 `./wordbank.js` 轉出）：干擾字母
+//      的來源是整個單字庫（不分主題，見一代 `pickDistractorLetters`），這個
+//      小工具函式提供給需要自行組字母方塊的呼叫端使用，非必要但無害。
+//   6. `advanceToNextQuestion()` 內部多了一個 guard：只有在 `awaitingNext`
+//      （答對、等玩家按下一題/空白鍵）狀態下才會真的把題目游標前進，對應
+//      一代 `proceedFromCorrect()` 的 `if (!gameState.awaitingNext) return;`——
+//      這是實作細節而非簽名/回傳形狀變動，但明講一下：UI 把空白鍵處理常駐
+//      掛在 keydown 上時，題目做到一半誤觸空白鍵不會被當成「跳過這題」。
+//   7. 新增 export `setProgressStorage(storage)`（從 `./session.js` 轉出）：
+//      進度持久化 timing 跟一代對等——`checkAnswer()` 每答完一題（不論對錯）
+//      就立刻 `loadProgress`/`saveProgress` 一次（見一代 `recordAnswer()`），
+//      不是等到 `finishLevel()` 才一次性 flush，避免中途重整瀏覽器遺失那一關
+//      已經答對的題目。但 `startLevel`/`checkAnswer`/`finishLevel` 的簽名是
+//      凍結的，沒辦法為了測試注入一個乾淨的 storage 而加參數，所以額外提供
+//      這個模組層級開關：生產程式碼完全不用呼叫（不呼叫＝原本的真實
+//      localStorage 行為不變），只有測試需要各自獨立 storage 隔離時才呼叫，
+//      搭配 `src/progress/store.js` 既有的 `createMemoryStorage()` 使用。
+// ---------------------------------------------------------------------------
+
+export {
+  getThemes,
+  getLevelDefsForTheme,
+  getValidLevelCombos,
+  getAllWordsForTheme,
+  getWordsForLevel,
+  MIN_WORDS_PER_LEVEL,
+  getFullWordBank,
+} from './wordbank.js';
+
+export {
+  startLevel,
+  getCurrentQuestionView,
+  placeLetterInSlot,
+  removeLastLetter,
+  checkAnswer,
+  useHint,
+  advanceToNextQuestion,
+  finishLevel,
+  resetForRetry,
+  setProgressStorage,
+} from './session.js';
 
 /**
  * @typedef {Object} WordEntry
@@ -51,133 +118,3 @@
  * @typedef {Object} GameSession
  * 內部狀態，欄位由實作者自訂，UI 層不會直接存取，只透過本檔的函式操作。
  */
-
-/**
- * @returns {Array<{id:string,name:string,icon:string,color:string}>} 主題清單
- */
-export function getThemes() {
-  throw new Error('not implemented');
-}
-
-/**
- * 一代 `getLevelDefsForTheme()` 的搬遷版本——唯一解析「這個主題有哪些關卡」
- * 的地方，`difficultyTiers`（長度分級）跟 `customLevels`（自訂關卡）都要處理。
- * @param {string} themeId
- * @returns {LevelDef[]}
- */
-export function getLevelDefsForTheme(themeId) {
-  throw new Error('not implemented');
-}
-
-/**
- * @returns {Array<{themeId:string, key:string}>} 所有「已套用 playable 規則」
- *   的 主題×關卡 組合，供「我的進度」頁面畫總覽表格與貼紙簿用
- */
-export function getValidLevelCombos() {
-  throw new Error('not implemented');
-}
-
-/**
- * @param {string} themeId
- * @returns {WordEntry[]} 該主題全部單字（不分關卡），供字卡瀏覽「整個主題」模式
- */
-export function getAllWordsForTheme(themeId) {
-  throw new Error('not implemented');
-}
-
-/**
- * @param {string} themeId
- * @param {string} levelKey
- * @returns {WordEntry[]} 該關卡包含的單字（未洗牌），供字卡瀏覽「鎖定主題+難度」模式
- */
-export function getWordsForLevel(themeId, levelKey) {
-  throw new Error('not implemented');
-}
-
-/**
- * 開始一個新關卡的作答 session（單字會被洗牌）。
- * @param {string} themeId
- * @param {string} levelKey
- * @returns {GameSession}
- */
-export function startLevel(themeId, levelKey) {
-  throw new Error('not implemented');
-}
-
-/**
- * 目前題目的渲染用資料，UI 只要照這個畫面就好，不用自己重算 tile/slot。
- * @param {GameSession} session
- * @returns {{
- *   index:number, total:number, entry:WordEntry,
- *   tiles:Array<{id:string,letter:string}>,
- *   slotCount:number,
- *   syllableGroupSizes:number[]|null,
- *   awaitingNext:boolean,
- *   locked:boolean
- * }}
- */
-export function getCurrentQuestionView(session) {
-  throw new Error('not implemented');
-}
-
-/**
- * 把某個字母方塊放進「目前第一個空槽」（一代規則：方塊除了字母外互相無差異，
- * 重複字母任選一個未用方塊都可以）。
- * @param {GameSession} session
- * @param {string} tileId
- * @returns {{slotIndex:number}|null} session 為 locked 狀態時回傳 null 且不做任何事
- */
-export function placeLetterInSlot(session, tileId) {
-  throw new Error('not implemented');
-}
-
-/**
- * 移除「最後一個已填槽位」（一代規則：槽位固定左到右依序填入，最後一個已填
- * 槽位＝最後輸入的字母；已被提示鎖定的槽位不能移除）。
- * @param {GameSession} session
- * @returns {{slotIndex:number}|null}
- */
-export function removeLastLetter(session) {
-  throw new Error('not implemented');
-}
-
-/**
- * 檢查目前答案槽位是否已全部填滿且拼對。
- * @param {GameSession} session
- * @returns {{correct:boolean, entry:WordEntry}}
- */
-export function checkAnswer(session) {
-  throw new Error('not implemented');
-}
-
-/**
- * 提示安全閥：自動填入下一個空槽的正確字母，每題限用一次，用過會讓這題的
- * 星等被封頂（見 `finishLevel` 的 `starsCapped` 邏輯）。
- * @param {GameSession} session
- * @returns {{tileId:string, slotIndex:number}|null} null 代表這題已經用過提示
- */
-export function useHint(session) {
-  throw new Error('not implemented');
-}
-
-/**
- * 答對後、玩家按下「下一題」或空白鍵時呼叫，把題目游標推進到下一題。
- * @param {GameSession} session
- * @returns {{finished:boolean}} finished=true 代表這關已經是最後一題，UI 該去呼叫
- *   `finishLevel()` 並切到結果畫面
- */
-export function advanceToNextQuestion(session) {
-  throw new Error('not implemented');
-}
-
-/**
- * 關卡結束時呼叫：計算星等（一代 `calcStars()` 邏輯：使用過提示的題目視同
- * non-first-try）、寫入 `src/progress` 模組（`saveProgress`，星等只升不降），
- * 並回傳這關是不是第一次拿到 3 星（供 UI 決定要不要觸發開寶箱動畫＋貼紙彈窗，
- * 見 `src/three-fx` 的 `celebrateLevelComplete(kind, { onLidOpen })`）。
- * @param {GameSession} session
- * @returns {{stars:number, accuracy:number, isNewSticker:boolean}}
- */
-export function finishLevel(session) {
-  throw new Error('not implemented');
-}
