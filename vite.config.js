@@ -1,6 +1,12 @@
 import { defineConfig } from 'vitest/config';
 
-export default defineConfig({
+// 部署到 GitHub Pages 的專案頁面（https://pcop.github.io/spell-questII/），
+// 網站不是掛在網域根目錄，所有資產路徑都要加上 `/spell-questII/` 前綴才不會
+// 404（見 src/audio/index.js、src/ui/mascot.js 的 import.meta.env.BASE_URL
+// 用法）。只在 `vite build` 時套用這個前綴，開發伺服器（`vite`/`vitest`）
+// 維持根目錄路徑，本機開發跟測試不用管子路徑。
+export default defineConfig(({ command }) => ({
+  base: command === 'build' ? '/spell-questII/' : '/',
   test: {
     environment: 'node',
     include: ['tests/**/*.test.js', 'src/**/*.test.js'],
@@ -19,4 +25,4 @@ export default defineConfig({
     // 一段已知且無法（也不需要）消除的噪音。
     chunkSizeWarningLimit: 600,
   },
-});
+}));
