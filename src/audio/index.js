@@ -8,8 +8,9 @@
 //
 // 規則：
 // - 音檔路徑改成 `public/words-audio/<word>.mp3`／
-//   `public/phonics-audio/<chunk>.mp3`，執行期用絕對路徑 `/words-audio/...`
-//   存取（Vite `public/` 目錄的慣例，不需要 import）。
+//   `public/phonics-audio/<chunk>.mp3`，執行期用 `import.meta.env.BASE_URL`
+//   前綴組出絕對路徑存取（Vite `public/` 目錄的慣例，不需要 import；前綴
+//   是為了子路徑部署，例如 GitHub Pages 的 `/repo-name/`，不能寫死 `/`）。
 // - **`unlockAudio()` 的「行動裝置第一次點擊才能解鎖音訊」機制必須保留**
 //   （見 規劃.md A 段約束），不要假設所有裝置都能無條件 autoplay。
 // - 音檔載入失敗要降級到瀏覽器原生 `SpeechSynthesis`（一代的既有行為），
@@ -65,6 +66,20 @@ function getPhonicsAudioEl() {
 
 // ---------- 音訊快取與預載入 ----------
 
+// `import.meta.env.BASE_URL` 是 Vite 的部署路徑前綴（本機開發是 '/'，部署到
+// GitHub Pages 這種子路徑網址時是 vite.config.js 的 `base` 設定值，例如
+// '/拼字王二/'，永遠有結尾斜線）。public/ 底下的檔案要用這個前綴組出正確的
+// 絕對路徑，不能寫死 '/words-audio/...'——寫死的話子路徑部署會直接 404。
+const BASE_URL = import.meta.env.BASE_URL;
+
+function wordAudioUrl(word) {
+  return BASE_URL + 'words-audio/' + encodeURIComponent(word) + '.mp3';
+}
+
+function phonicsAudioUrl(chunkName) {
+  return BASE_URL + 'phonics-audio/' + encodeURIComponent(chunkName) + '.mp3';
+}
+
 function preloadAudio(url) {
   if (!url || preloadedAudioMap[url] || !hasAudioCtor()) return;
   const audio = new Audio();
@@ -95,12 +110,12 @@ export function phonicsChunkAudioName(phonics, index) {
 export function preloadEntryAudio(entry) {
   if (!entry) return;
   if (entry.word) {
-    preloadAudio('/words-audio/' + encodeURIComponent(entry.word.toLowerCase()) + '.mp3');
+    preloadAudio(wordAudioUrl(entry.word.toLowerCase()));
   }
   if (entry.phonics && entry.phonics.chunks) {
     entry.phonics.chunks.forEach((chunk, i) => {
       const audioName = phonicsChunkAudioName(entry.phonics, i);
-      preloadAudio('/phonics-audio/' + encodeURIComponent(audioName) + '.mp3');
+      preloadAudio(phonicsAudioUrl(audioName));
     });
   }
 }
@@ -174,7 +189,7 @@ export function speakWord(word, opts) {
   el.onended = null;
   el.onerror = null;
 
-  el.src = '/words-audio/' + encodeURIComponent(normalizedWord) + '.mp3';
+  el.src = wordAudioUrl(normalizedWord);
   el.onended = () => {
     if (onEnded) onEnded();
   };
@@ -300,7 +315,7 @@ export function speakPhonics(entry, opts) {
     };
 
     phonicsAudioHandlers = { onEnded: onChunkEnded, onError: onChunkError };
-    el.src = '/phonics-audio/' + encodeURIComponent(audioName) + '.mp3';
+    el.src = phonicsAudioUrl(audioName);
     el.playbackRate = rate;
     el.addEventListener('ended', onChunkEnded);
     el.addEventListener('error', onChunkError);
@@ -342,7 +357,7 @@ export function unlockAudio() {
   const wEl = getWordAudioEl();
   if (wEl) {
     wEl.muted = true;
-    wEl.src = '/words-audio/cat.mp3';
+    wEl.src = wordAudioUrl('cat');
     let p1;
     try {
       p1 = wEl.play();
@@ -365,7 +380,7 @@ export function unlockAudio() {
   const pEl = getPhonicsAudioEl();
   if (pEl) {
     pEl.muted = true;
-    pEl.src = '/phonics-audio/a.mp3';
+    pEl.src = phonicsAudioUrl('a');
     let p2;
     try {
       p2 = pEl.play();

@@ -12,8 +12,8 @@
 // `mascotReactCorrectEmotion`/`mascotReactWrong`/`mascotReactHint`/
 // `mascotReactCheer`；既有 export 的簽名與既有呼叫點行為不變。
 //
-// 圖檔路徑改成 `/mascot-images/<id>.png`（Vite `public/` 目錄的絕對路徑慣例，
-// 跟 audio 模組的 `/words-audio/...`、`/phonics-audio/...` 一致）。
+// 圖檔路徑用 `import.meta.env.BASE_URL` 前綴組出 `<BASE_URL>mascot-images/<id>.png`
+// （Vite `public/` 目錄的慣例，跟 audio 模組的處理方式一致，支援子路徑部署）。
 
 const MASCOT_EXPRESSIONS = [
   'neutral', 'worried', 'pouting', 'angry', 'shocked',
@@ -35,6 +35,11 @@ const MASCOT_GROUPS = MASCOT_CONFIGS.map((cfg) =>
 );
 
 const MASCOT_CHARACTERS = [].concat(...MASCOT_GROUPS);
+
+// 部署到子路徑（例如 GitHub Pages 的 /repo-name/）時，寫死開頭的 '/' 會
+// 404——用 Vite 的部署路徑前綴組出正確的絕對路徑（見 src/audio/index.js
+// 同樣的處理方式）。
+const BASE_URL = import.meta.env.BASE_URL;
 
 let currentMascotId = null;
 let mascotBubbleTimer = null;
@@ -62,7 +67,7 @@ export function setMascotCharacter(id) {
   currentMascotId = character.id;
   const mascot = $('mascot');
   if (!mascot) return;
-  mascot.innerHTML = `<img src="/mascot-images/${character.id}.png" alt="${character.name}">`;
+  mascot.innerHTML = `<img src="${BASE_URL}mascot-images/${character.id}.png" alt="${character.name}">`;
   mascot.setAttribute('aria-label', character.name);
 }
 
