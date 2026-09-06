@@ -21,7 +21,10 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          # jsdom@30（tests/integration.smoke.test.js 用它模擬瀏覽器 DOM）要求
+          # Node ^22.22.2 || ^24.15.0 || >=26.0.0，Node 20 完全不支援，會在
+          # import jsdom 時就炸掉（undici 內部呼叫的 webidl API 不存在）。
+          node-version: 24
           cache: npm
       - run: npm ci
       - run: npm test
