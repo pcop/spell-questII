@@ -44,6 +44,7 @@ CHUNK_CONFIG = {
     "ee": {"word": "see", "start": 0.10, "end": 0.50},
     "ea": {"word": "eat", "start": 0.0, "end": 0.40},
     "oo": {"word": "moon", "start": 0.10, "end": 0.50},
+    "oo-short": {"word": "book", "start": 0.10, "end": 0.35},
     "ow": {"word": "cow", "start": 0.10, "end": 0.55},
     "ou": {"word": "out", "start": 0.0, "end": 0.42},
     "ay": {"word": "say", "start": 0.10, "end": 0.50},
@@ -60,6 +61,8 @@ CHUNK_CONFIG = {
     "ur": {"word": "fur", "start": 0.10, "end": 0.50},
     "air": {"word": "air", "start": 0.0, "end": 0.45},
     "ear": {"word": "ear", "start": 0.0, "end": 0.45},
+    "ear-pear": {"word": "pear", "start": 0.10, "end": 0.50},
+    "ear-heart": {"word": "heart", "start": 0.10, "end": 0.35},
     "our": {"word": "four", "start": 0.10, "end": 0.50},
     "oor": {"word": "door", "start": 0.10, "end": 0.50},
 

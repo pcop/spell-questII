@@ -4,9 +4,13 @@
 // `scheduleMascotIdleTilt`）。
 //
 // Phase 1 只搬「中性表情」行為——一代 `pickRandomMascot()` 本來就是在 45 張
-// 表情圖裡隨機挑一張顯示（跟遊戲事件無關的純隨機待機切換），不是「答對挑開心
-// 表情、答錯挑難過表情」那種情緒對應邏輯（那是 Phase 3「表情包接情緒」的範圍）。
-// 這裡原封不動搬過來，不新增任何跟 emoji 表情有關的判斷。
+// 表情圖裡隨機挑一張顯示，跟遊戲事件無關。
+//
+// 這裡（D 段「新玩法」）新增 `pickMascotExpression(pool)`：角色仍隨機輪替，
+// 但表情改成依事件（答對/答錯/提示/待機/過關）從對應的表情子集裡隨機挑，
+// 而不是全部 9 種都可能挑到。新增的事件感知 export 見下方
+// `mascotReactCorrectEmotion`/`mascotReactWrong`/`mascotReactHint`/
+// `mascotReactCheer`；既有 export 的簽名與既有呼叫點行為不變。
 //
 // 圖檔路徑改成 `/mascot-images/<id>.png`（Vite `public/` 目錄的絕對路徑慣例，
 // 跟 audio 模組的 `/words-audio/...`、`/phonics-audio/...` 一致）。
@@ -71,6 +75,23 @@ export function pickRandomMascot() {
 }
 
 /**
+ * 依事件挑表情：先隨機挑一位角色（排除目前角色，維持跟 pickRandomMascot 一樣
+ * 「換角色」的輪替手感），再從呼叫端傳入的表情子集 `pool` 裡隨機挑一種，組成
+ * `${prefix}_${expression}` 這個 id 顯示。是 pickRandomMascot 的「限縮表情池」
+ * 版本，給答對/答錯/提示/待機等有明確情境的呼叫點使用。
+ * @param {string[]} pool 表情子集（MASCOT_EXPRESSIONS 的子集，至少 1 個）
+ * @returns {void}
+ */
+function pickMascotExpression(pool) {
+  const currentPrefix = currentMascotId ? currentMascotId.split('_')[0] : null;
+  let configs = MASCOT_CONFIGS.filter((cfg) => cfg.prefix !== currentPrefix);
+  if (!configs.length) configs = MASCOT_CONFIGS;
+  const cfg = configs[Math.floor(Math.random() * configs.length)];
+  const expression = pool[Math.floor(Math.random() * pool.length)];
+  setMascotCharacter(`${cfg.prefix}_${expression}`);
+}
+
+/**
  * 通用反應動畫（例如過關時的 'cheer'）。
  * @param {string} kind
  * @returns {void}
@@ -108,6 +129,65 @@ export function mascotReactCorrect() {
   mascot.classList.add('celebrate-correct');
 }
 
+/**
+ * 答對時的特寫反應（事件感知版）：跟 mascotReactCorrect 完全相同的移到正中央
+ * ／隨機縮放 3~5 倍／celebrate-correct 動畫邏輯，差別只在换角色那一步改成從
+ * 「開心/得意」表情子集（laughing/winking/blushing）裡挑，而不是全部 9 種都
+ * 可能挑到（例如 worried/angry 這種不該在答對時出現的表情）。
+ * @returns {void}
+ */
+export function mascotReactCorrectEmotion() {
+  const mascot = $('mascot');
+  const mascotWrap = $('mascot-wrap');
+  if (!mascot) return;
+  pickMascotExpression(['laughing', 'winking', 'blushing']);
+  clearTimeout(mascotBubbleTimer);
+  const bubble = $('mascot-bubble');
+  if (bubble) bubble.hidden = true;
+  mascot.classList.remove('tilt-left', 'tilt-right', 'pulse', 'celebrate-correct');
+  if (mascotWrap) mascotWrap.classList.add('celebrating');
+  void mascot.offsetWidth;
+  const scale = 3 + Math.random() * 2;
+  mascot.style.setProperty('--celebrate-scale', scale.toFixed(2));
+  mascot.classList.add('celebrate-correct');
+}
+
+/**
+ * 答錯時的溫和反應：換成「有點沮喪但不到生氣」的表情（worried/pouting，刻意
+ * 不含 angry——是鼓勵孩子而非責備），animation 不新增 CSS class，直接複用既有
+ * 的 tilt-left/tilt-right 待機歪頭效果表達小小的挫折感。
+ * @returns {void}
+ */
+export function mascotReactWrong() {
+  pickMascotExpression(['worried', 'pouting']);
+  // 直接複用 mascotReact：它會一併清掉 celebrate-correct/cheer/tilt/pulse
+  // 並把 wrapper 的 celebrating 收回，避免上一題答對的特寫還沒播完就被這裡
+  // 硬切斷 class，導致 celebrateCorrect 的 animationend 永遠不會觸發、
+  // wrapper 卡在高 z-index 出不來。
+  mascotReact(Math.random() < 0.5 ? 'tilt-left' : 'tilt-right');
+}
+
+/**
+ * 按下提示按鈕時的反應：固定顯示 thinking 表情（情境明確，不需要隨機挑），
+ * 角色本身仍照 pickMascotExpression 的規則輪替，只是表情池只有一種可能。
+ * 不換動畫 class，只換角色＋表情圖，暗示「讓我幫你想一下」。
+ * @returns {void}
+ */
+export function mascotReactHint() {
+  pickMascotExpression(['thinking']);
+}
+
+/**
+ * 過關結果畫面的反應（事件感知版）：換成「開心/得意」表情子集
+ * （laughing/winking）後，套用跟既有 mascotReact('cheer') 完全相同的
+ * cheer 動畫處理邏輯（直接複用 mascotReact，避免重複清 class／reflow 的程式碼）。
+ * @returns {void}
+ */
+export function mascotReactCheer() {
+  pickMascotExpression(['laughing', 'winking']);
+  mascotReact('cheer');
+}
+
 /** @param {string} text @returns {void} */
 export function showMascotBubble(text) {
   const bubble = $('mascot-bubble');
@@ -120,12 +200,18 @@ export function showMascotBubble(text) {
   }, 2600);
 }
 
-/** 待機時的隨機歪頭（或偶爾放大一下）+ 鼓勵泡泡。 @returns {void} */
+/**
+ * 待機時的隨機歪頭（或偶爾放大一下）+ 鼓勵泡泡。表情改成從中性子集
+ * （neutral/thinking）挑，避免孩子沒做任何事時，待機動畫突然跳出
+ * shocked/angry 這種太戲劇化的表情。
+ * @returns {void}
+ */
 export function mascotIdleTilt() {
   const mascot = $('mascot');
   if (!mascot) return;
   // 正在播答對/過關動畫時跳過，避免動畫互相打架
   if (mascot.classList.contains('celebrate-correct') || mascot.classList.contains('cheer')) return;
+  pickMascotExpression(['neutral', 'thinking']);
   mascot.classList.remove('tilt-left', 'tilt-right', 'pulse');
   void mascot.offsetWidth;
   const roll = Math.random();

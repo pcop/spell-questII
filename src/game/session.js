@@ -21,41 +21,30 @@
 //
 // 測試隔離：`loadProgress`/`saveProgress` 沒有暴露 storage 參數給 game 層的
 // 契約（`startLevel`/`checkAnswer`/`finishLevel` 簽名是凍結的，不能為了測試
-// 加一個 storage 參數），所以額外新增 `setProgressStorage(storage)`——
-// 一個模組層級的 storage 覆寫開關，預設不呼叫就完全不影響生產行為（沿用
-// `src/progress/store.js` 的預設 real localStorage / 記憶體 fallback），只有
-// 測試會呼叫它注入各自獨立的 `createMemoryStorage()`，避免測試之間共用同一份
-// process 內的 fallback storage 互相汙染。
+// 加一個 storage 參數），所以有一個模組層級的 storage 覆寫開關，預設不呼叫
+// 就完全不影響生產行為（沿用 `src/progress/store.js` 的預設 real localStorage /
+// 記憶體 fallback），只有測試會呼叫它注入各自獨立的 `createMemoryStorage()`，
+// 避免測試之間共用同一份 process 內的 fallback storage 互相汙染。
+//
+// Phase 3 更新：這個開關（`setProgressStorage`/覆寫狀態）搬到 `./wordbank.js`
+// 了（見該檔開頭說明）——`getLevelDefsForTheme()`/`getWordsForLevel()` 現在
+// 也需要讀 `src/progress`（複習關卡判斷），為了讓兩邊測試時讀寫同一份
+// storage，改成 wordbank.js 是唯一持有者，這裡透過 `getProgressStorageOverride()`
+// 讀同一份。`index.js` 對外的 `setProgressStorage` export 來源已同步改成
+// `./wordbank.js`，行為/簽名完全不變。
 
-import { getWordsForLevel, getLevelDefsForTheme } from './wordbank.js';
+import { getWordsForLevel, getLevelDefsForTheme, getProgressStorageOverride } from './wordbank.js';
 import { buildTileSet, shuffleArray } from './helpers.js';
 import { getFullWordBank } from './wordbank.js';
 import { loadProgress, saveProgress } from '../progress/store.js';
 import { levelKey as progressLevelKey } from '../progress/schema.js';
 
-// 模組層級的 storage 覆寫（見檔案開頭「測試隔離」說明）。`undefined` 代表沒有
-// 覆寫，`loadProgress`/`saveProgress` 會用它們自己的預設參數（真實
-// localStorage，或沒有 localStorage 時的記憶體 fallback）。
-let storageOverride;
-
-/**
- * 新增 export（不在原契約裡）：覆寫這個模組內部讀寫進度時使用的 storage。
- * 生產程式碼不需要呼叫這個——不呼叫就是原本的真實 localStorage 行為。
- * 只有測試需要每個案例各自乾淨的 storage 時才呼叫，搭配
- * `src/progress/store.js` 匯出的 `createMemoryStorage()` 使用。
- * @param {{getItem:Function,setItem:Function}|undefined} storage
- * @returns {void}
- */
-export function setProgressStorage(storage) {
-  storageOverride = storage;
-}
-
 function getProgress() {
-  return loadProgress(storageOverride);
+  return loadProgress(getProgressStorageOverride());
 }
 
 function persistProgress(progress) {
-  saveProgress(progress, storageOverride);
+  saveProgress(progress, getProgressStorageOverride());
 }
 
 function ensureLevelProgress(progress, themeId, key) {
@@ -101,6 +90,9 @@ export function startLevel(themeId, levelKey) {
   const session = {
     themeId,
     levelKey: key,
+    // 新增欄位（不在原契約裡，session 是實作細節，UI 不直接讀它）：記下這關是
+    // tier/custom/review 哪一種來源，`finishLevel()` 用來判斷複習關卡不給貼紙。
+    kind: def ? def.kind : 'tier',
     distractorCount,
     words,
     currentIndex: 0,
@@ -331,6 +323,12 @@ export function finishLevel(session) {
   const accuracy = total > 0 ? session.firstTryCorrect / total : 0;
   const stars = calcStars(session.firstTryCorrect, total, session.totalWrongAttempts);
   const key = progressLevelKey(session.themeId, session.levelKey);
+  // Phase 3：複習關卡永遠不能觸發貼紙（不然貼紙變成不限次數、隨時可以刷的
+  // 東西，破壞「首次三星才給貼紙」的收藏機制）。星等/正確率/wordProgress
+  // 這些照常寫入——複習答對了本來就該讓對應單字的 correct 計數增加，
+  // `wordbank.js` 的 `aggregateWordProgressForTheme()` 也會把這關自己的
+  // wordProgress 算進「是否還需要複習」的判斷，這才是複習存在的意義。
+  const isReview = session.kind === 'review';
 
   const progress = getProgress();
   const lp = ensureLevelProgress(progress, session.themeId, session.levelKey);
@@ -346,7 +344,7 @@ export function finishLevel(session) {
 
   progress.lastPlayedAt = lp.lastPlayedAt;
 
-  const isNewSticker = stars === 3 && prevBestStars < 3 && !progress.collectibles[key];
+  const isNewSticker = !isReview && stars === 3 && prevBestStars < 3 && !progress.collectibles[key];
   if (isNewSticker) progress.collectibles[key] = true;
 
   persistProgress(progress);

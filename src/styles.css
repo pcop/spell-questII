@@ -1,14 +1,55 @@
+/* ==========================================================================
+   拼字冒險王 - 二代視覺系統 (Design Tokens)
+   主色：珊瑚橙（行動呼籲）＋ 靛紫夜空（背景）＋ 青綠（次要/成功）
+   風格關鍵字：漫畫感厚邊框、立體 3D 按鈕、夜空星光、活潑有彈性的動畫
+   ========================================================================== */
 :root {
-  --color-bg: #fef9f0;
-  --color-panel: #ffffff;
-  --color-primary: #ffb703;
-  --color-primary-dark: #fb8500;
-  --color-accent: #06d6a0;
-  --color-danger: #ef476f;
-  --color-text: #3a3a3a;
-  --color-text-soft: #6b6b6b;
-  --radius: 20px;
-  --shadow: 0 6px 0 rgba(0,0,0,0.08), 0 10px 24px rgba(0,0,0,0.08);
+  /* 背景（夜空冒險漸層） */
+  --color-bg-1: #1c1147;
+  --color-bg-2: #3a2179;
+  --color-bg-3: #6c3fb5;
+
+  /* 面板 / 中性色 */
+  --color-panel: #fffaf0;
+  --color-panel-alt: #f2ecff;   /* 淡紫：一般次要列（進度列、字卡等） */
+  --color-panel-warm: #fff2dd;  /* 暖黃：提示/預覽/加金相關元件 */
+  --color-border: #2a1a55;      /* 深靛紫，漫畫感描邊 */
+  --color-border-soft: #d8cdf5;
+
+  /* 品牌主色 */
+  --color-primary: #ff6b4a;
+  --color-primary-dark: #d9451f;
+  --color-secondary: #1fb8c4;
+  --color-secondary-dark: #12838c;
+  --color-accent: #2fb765;       /* 成功/分數 */
+  --color-accent-dark: #1c8c48;
+  --color-danger: #ff3f62;
+  --color-danger-dark: #c21f3e;
+  --color-gold: #ffc94a;
+  --color-gold-dark: #b8790a;
+
+  /* 文字 */
+  --color-text: #241338;
+  --color-text-soft: #564a78;
+  --color-text-invert: #fff8ef;
+
+  /* 造型 */
+  --radius: 26px;
+  --radius-sm: 16px;
+  --border-w: 3px;
+  --shadow-panel: 0 10px 0 var(--color-border), 0 22px 40px rgba(10, 5, 30, 0.45);
+  --shadow-panel-sm: 0 6px 0 var(--color-border), 0 14px 26px rgba(10, 5, 30, 0.35);
+
+  /* 疊層順序（相對關係需維持：mascot-wrap < three-fx-layer < result-panel < toast < sticker-modal < mascot-wrap.celebrating） */
+  --z-mascot: 5;
+  --z-threefx: 20;
+  --z-result: 30;
+  --z-toast: 60;
+  --z-sticker: 100;
+  --z-mascot-celebrate: 400;
+
+  --font-heading: "Baloo 2", "Chalkboard SE", "Comic Sans MS", system-ui, -apple-system, sans-serif;
+  --font-body: "Nunito", "Baloo 2", "Chalkboard SE", "Comic Sans MS", system-ui, -apple-system, sans-serif;
 }
 
 * { box-sizing: border-box; }
@@ -21,14 +62,26 @@ html, body {
 }
 
 body {
-  font-family: "Baloo 2", "Chalkboard SE", "Comic Sans MS", system-ui, -apple-system, sans-serif;
-  background: linear-gradient(160deg, #fef9f0 0%, #eaf6ff 100%);
+  font-family: var(--font-body);
   color: var(--color-text);
   min-height: 100vh;
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  padding: 24px 16px 64px;
+  padding: 28px 16px 72px;
+  background-color: var(--color-bg-1);
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  background-image:
+    radial-gradient(2px 2px at 12% 18%, rgba(255, 255, 255, 0.75), transparent),
+    radial-gradient(2px 2px at 82% 12%, rgba(255, 255, 255, 0.55), transparent),
+    radial-gradient(1.5px 1.5px at 65% 6%, rgba(255, 255, 255, 0.6), transparent),
+    radial-gradient(2px 2px at 92% 42%, rgba(255, 255, 255, 0.45), transparent),
+    radial-gradient(1.5px 1.5px at 8% 55%, rgba(255, 255, 255, 0.5), transparent),
+    radial-gradient(2px 2px at 45% 88%, rgba(255, 255, 255, 0.4), transparent),
+    radial-gradient(1.5px 1.5px at 25% 72%, rgba(255, 255, 255, 0.55), transparent),
+    radial-gradient(2px 2px at 75% 78%, rgba(255, 255, 255, 0.4), transparent),
+    linear-gradient(165deg, var(--color-bg-1) 0%, var(--color-bg-2) 55%, var(--color-bg-3) 100%);
 }
 
 #app {
@@ -37,174 +90,219 @@ body {
 }
 
 .view {
-  animation: fadeIn 0.35s ease;
+  /* 進場動畫放在 .panel 本身（見下方），避免 .view 這層對 .result-panel 的
+     祖先產生暫時性 stacking context，影響它跟 #three-fx-layer 的疊層順序。 */
 }
 
 .panel {
   background: var(--color-panel);
+  border: var(--border-w) solid var(--color-border);
   border-radius: var(--radius);
-  box-shadow: var(--shadow);
-  padding: 24px;
+  box-shadow: var(--shadow-panel);
+  padding: 26px;
+  animation: panelIn 0.4s cubic-bezier(0.22, 1.4, 0.4, 1);
 }
 
 .view-header {
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-bottom: 16px;
+  margin-bottom: 18px;
 }
 
 .view-header h2 {
   margin: 0;
   flex: 1;
   text-align: center;
+  font-family: var(--font-heading);
+  color: var(--color-text);
+  font-size: clamp(19px, 4.5vw, 24px);
 }
 
 /* Loading */
 .loading-box {
   text-align: center;
-  padding: 80px 20px;
+  padding: 84px 20px;
+}
+.loading-box p {
+  font-weight: 800;
+  font-size: 18px;
+  color: var(--color-text);
 }
 .loading-spinner {
-  font-size: 64px;
+  font-size: 68px;
   animation: bounce 1s infinite ease-in-out;
 }
 
 /* Splash */
 .splash-panel {
   text-align: center;
-  padding: 48px 24px;
+  padding: 50px 24px;
 }
 .game-title {
-  font-size: clamp(28px, 7vw, 44px);
-  margin: 0 0 8px;
+  font-family: var(--font-heading);
+  font-size: clamp(30px, 7.5vw, 46px);
+  margin: 0 0 10px;
   color: var(--color-primary-dark);
-  text-shadow: 2px 2px 0 rgba(0,0,0,0.06);
+  text-shadow: 2px 2px 0 rgba(36, 19, 56, 0.12);
 }
 .subtitle {
   color: var(--color-text-soft);
-  margin-bottom: 32px;
+  margin-bottom: 34px;
   font-size: 18px;
+  font-weight: 700;
 }
 
 .menu-buttons {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 16px;
   align-items: stretch;
   max-width: 320px;
   margin: 0 auto;
 }
 
-/* Buttons */
+/* ==========================================================================
+   Buttons — 統一的 3D 立體按鈕語言：實色 + 底部厚色塊 + 按下回饋
+   ========================================================================== */
 .btn {
-  font-family: inherit;
+  font-family: var(--font-body);
   font-size: 18px;
-  font-weight: 700;
+  font-weight: 800;
   border: none;
   border-radius: 999px;
-  padding: 14px 24px;
+  padding: 16px 26px;
   cursor: pointer;
-  transition: transform 0.12s ease, box-shadow 0.12s ease;
+  transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.15s ease, filter 0.15s ease;
   touch-action: manipulation;
-  min-height: 48px;
+  min-height: 56px;
 }
-.btn:active { transform: translateY(2px) scale(0.98); }
+.btn:active { transform: translateY(4px) scale(0.97); }
+@media (hover: hover) {
+  .btn:not(:disabled):hover { filter: brightness(1.07); transform: translateY(-2px); }
+  .btn:not(:disabled):active { transform: translateY(4px) scale(0.97); }
+}
 
 .btn-primary {
   background: var(--color-primary);
-  color: #4a3200;
-  box-shadow: 0 5px 0 var(--color-primary-dark);
+  color: var(--color-text-invert);
+  box-shadow: 0 6px 0 var(--color-primary-dark);
 }
-.btn-primary:hover { filter: brightness(1.05); }
 
-.btn-big { font-size: 22px; padding: 18px 24px; }
+.btn-big { font-size: 23px; padding: 20px 26px; min-height: 64px; }
 
 .btn-primary:disabled {
-  background: #e0e0e0;
-  color: #9a9a9a;
-  box-shadow: 0 4px 0 #cfcfcf;
+  background: #cfc7dd;
+  color: #8c84a0;
+  box-shadow: 0 6px 0 #a89fbe;
   cursor: not-allowed;
+  filter: none;
+  transform: none;
 }
 
 .btn-secondary {
-  background: #eaf6ff;
-  color: #1d3557;
-  box-shadow: 0 4px 0 #c8e6ff;
+  background: var(--color-secondary);
+  color: var(--color-text-invert);
+  box-shadow: 0 5px 0 var(--color-secondary-dark);
 }
 
 .btn-back {
   background: transparent;
   color: var(--color-text-soft);
   box-shadow: none;
-  padding: 10px 14px;
+  padding: 12px 16px;
+  min-height: 48px;
+  font-size: 17px;
 }
+.btn-back:active { transform: translateY(1px) scale(0.97); }
 
 .btn-toggle {
-  background: #f1f1f1;
+  background: var(--color-panel-alt);
   color: var(--color-text);
-  box-shadow: none;
-  padding: 10px 16px;
+  box-shadow: 0 3px 0 var(--color-border-soft);
+  border: 2px solid var(--color-border-soft);
+  padding: 12px 18px;
   font-size: 15px;
+  min-height: 52px;
 }
 .btn-toggle.active {
   background: var(--color-accent);
-  color: white;
+  color: var(--color-text-invert);
+  border-color: var(--color-accent-dark);
+  box-shadow: 0 3px 0 var(--color-accent-dark);
 }
 
 /* Theme grid */
 .theme-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-  gap: 14px;
+  gap: 16px;
 }
 .theme-card {
-  border: none;
-  border-radius: 18px;
-  padding: 18px 10px;
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border: var(--border-w) solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 20px 10px;
   text-align: center;
   cursor: pointer;
-  color: white;
-  font-family: inherit;
-  font-weight: 700;
+  color: #ffffff;
+  font-family: var(--font-body);
+  font-weight: 800;
   font-size: 16px;
-  box-shadow: 0 5px 0 rgba(0,0,0,0.15);
-  transition: transform 0.12s ease;
-  min-height: 48px;
+  box-shadow: 0 6px 0 rgba(0, 0, 0, 0.28);
+  transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.15s ease;
+  min-height: 56px;
+  text-shadow: 0 2px 3px rgba(0, 0, 0, 0.45);
 }
-.theme-card:active { transform: translateY(2px) scale(0.98); }
-.theme-card .theme-icon { font-size: 36px; display: block; margin-bottom: 6px; }
-.theme-card .theme-stars { display: block; font-size: 13px; margin-top: 6px; opacity: 0.9; }
+/* 底部漸層暗化，確保無論卡片識別色多淺，文字都維持足夠對比 */
+.theme-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0) 40%, rgba(0, 0, 0, 0.32) 100%);
+}
+.theme-card:active { transform: translateY(3px) scale(0.97); box-shadow: 0 3px 0 rgba(0, 0, 0, 0.28); }
+.theme-card .theme-icon { font-size: 38px; display: block; margin-bottom: 8px; filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.3)); }
+.theme-card .theme-stars { display: block; font-size: 13px; margin-top: 8px; opacity: 0.95; font-weight: 700; }
 
 /* Level grid */
 .level-grid {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  margin-bottom: 24px;
+  gap: 14px;
+  margin-bottom: 26px;
 }
 .level-card {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  border-radius: 16px;
+  border: 2px solid var(--color-border-soft);
+  border-radius: var(--radius-sm);
   padding: 16px 20px;
-  background: #f6f9fc;
-  font-weight: 700;
+  background: var(--color-panel-alt);
+  font-weight: 800;
   font-size: 17px;
   color: var(--color-text);
   flex-wrap: wrap;
+  transition: opacity 0.15s ease;
 }
 .level-card.disabled {
-  opacity: 0.45;
+  opacity: 0.72;
+  background: #ece7f2;
+  border-color: #d9d3e6;
+  color: var(--color-text-soft);
+  filter: grayscale(0.4);
 }
-.level-card .level-stars { font-size: 18px; }
-.level-card .level-accuracy { font-size: 13px; color: var(--color-text-soft); font-weight: 400; }
+.level-card .level-stars { font-size: 19px; }
+.level-card .level-accuracy { font-size: 14px; color: var(--color-text-soft); font-weight: 800; }
 .level-info {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 5px;
   flex: 1;
   min-width: 140px;
 }
@@ -213,21 +311,21 @@ body {
   gap: 8px;
 }
 .level-preview-btn {
-  background: #fff8e1;
-  color: #b8860b;
+  background: var(--color-panel-warm);
+  color: var(--color-gold-dark);
   box-shadow: none;
-  border: 1px solid #f0e0b0;
-  font-size: 18px;
-  padding: 8px 12px;
-  min-height: unset;
+  border: 2px solid var(--color-gold);
+  font-size: 19px;
+  padding: 10px 14px;
+  min-height: 48px;
 }
 .level-start-btn {
   background: var(--color-primary);
-  color: #4a3200;
+  color: var(--color-text-invert);
   box-shadow: 0 4px 0 var(--color-primary-dark);
-  padding: 10px 18px;
+  padding: 12px 20px;
   font-size: 15px;
-  min-height: unset;
+  min-height: 48px;
 }
 .level-preview-btn:disabled,
 .level-start-btn:disabled {
@@ -235,7 +333,12 @@ body {
   cursor: not-allowed;
 }
 
-.hint-mode-picker { text-align: center; }
+.hint-mode-picker { text-align: center; margin-top: 6px; }
+.hint-mode-picker p {
+  color: var(--color-text);
+  font-weight: 800;
+  margin: 14px 0 8px;
+}
 .hint-mode-buttons {
   display: flex;
   justify-content: center;
@@ -243,35 +346,49 @@ body {
   flex-wrap: wrap;
 }
 
-/* Game view */
-.game-panel { padding: 18px; }
+/* ==========================================================================
+   Game view
+   ========================================================================== */
+.game-panel { padding: 20px 18px; }
 .game-topbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 12px;
-  font-weight: 700;
+  margin-bottom: 14px;
+  font-weight: 800;
 }
-.game-score { color: var(--color-accent); }
+.game-score {
+  color: var(--color-accent-dark);
+  font-size: 17px;
+  background: var(--color-panel-alt);
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 2px solid var(--color-border-soft);
+}
+.game-progress {
+  font-size: 15px;
+  color: var(--color-text);
+}
 
 .game-topbar-center {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
 }
 
 .hint-btn {
-  background: #fff8e1;
-  color: #b8860b;
+  background: var(--color-panel-warm);
+  color: var(--color-gold-dark);
   box-shadow: none;
-  border: 1px solid #f0e0b0;
-  font-size: 15px;
-  padding: 6px 10px;
-  min-height: unset;
+  border: 2px solid var(--color-gold);
+  font-size: 19px;
+  padding: 10px 14px;
+  min-height: 48px;
+  min-width: 48px;
 }
 .hint-btn:disabled,
 .hint-btn.used {
-  opacity: 0.35;
+  opacity: 0.4;
   cursor: not-allowed;
 }
 
@@ -279,11 +396,11 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
-  margin: 12px 0 20px;
+  gap: 12px;
+  margin: 14px 0 22px;
 }
 .prompt-visual {
-  font-size: 84px;
+  font-size: 86px;
   min-height: 100px;
   display: flex;
   align-items: center;
@@ -293,30 +410,35 @@ body {
   width: 90px;
   height: 90px;
   border-radius: 50%;
-  border: 4px solid #ddd;
+  border: 5px solid var(--color-panel);
+  box-shadow: 0 0 0 3px var(--color-border-soft);
 }
 .prompt-zh {
   font-size: 22px;
-  font-weight: 700;
+  font-weight: 800;
   color: var(--color-text-soft);
 }
 .speaker-btn {
   background: var(--color-primary);
-  color: #4a3200;
-  box-shadow: 0 4px 0 var(--color-primary-dark);
-  font-size: 22px;
-  padding: 10px 18px;
+  color: var(--color-text-invert);
+  box-shadow: 0 5px 0 var(--color-primary-dark);
+  font-size: 24px;
+  padding: 14px 22px;
+  min-height: 56px;
 }
 
 /* Flashcards view */
-.flashcard-panel { text-align: center; padding: 24px; }
-.flashcard-position { color: var(--color-text-soft); font-weight: 700; margin-bottom: 4px; }
+.flashcard-panel { text-align: center; padding: 26px; }
+.flashcard-position { color: var(--color-text-soft); font-weight: 800; margin-bottom: 6px; }
 .flashcard-card {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 14px;
-  padding: 28px 16px 8px;
+  padding: 26px 16px 10px;
+  background: var(--color-panel-alt);
+  border-radius: var(--radius-sm);
+  border: 2px solid var(--color-border-soft);
 }
 .flashcard-visual {
   font-size: 96px;
@@ -326,7 +448,8 @@ body {
   justify-content: center;
 }
 .flashcard-word {
-  font-size: 40px;
+  font-family: var(--font-heading);
+  font-size: 42px;
   font-weight: 800;
   letter-spacing: 2px;
   text-transform: uppercase;
@@ -334,16 +457,16 @@ body {
 }
 .flashcard-syllables {
   font-size: 18px;
-  font-weight: 600;
+  font-weight: 700;
   letter-spacing: 1px;
   color: var(--color-text-soft);
   margin-top: -6px;
 }
 .flashcard-phonics {
   font-size: 16px;
-  font-weight: 600;
+  font-weight: 700;
   letter-spacing: 1px;
-  color: #b8860b;
+  color: var(--color-gold-dark);
   margin-top: -4px;
 }
 .flashcard-phonics .silent-chunk {
@@ -351,7 +474,7 @@ body {
 }
 .flashcard-speak-row {
   display: flex;
-  gap: 10px;
+  gap: 12px;
   margin-top: 4px;
 }
 .flashcard-speed-row {
@@ -359,15 +482,15 @@ body {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  margin-top: 14px;
-  padding-top: 12px;
-  border-top: 1px dashed #e8ecf1;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 2px dashed var(--color-border-soft);
   width: 100%;
   flex-wrap: wrap;
 }
 .flashcard-speed-row .speed-label {
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 800;
   color: var(--color-text-soft);
 }
 .flashcard-speed-row .hint-mode-buttons {
@@ -375,28 +498,30 @@ body {
   gap: 6px;
 }
 .flashcard-speed-row .btn-toggle {
-  padding: 6px 10px;
+  padding: 8px 12px;
   font-size: 12px;
   border-radius: 999px;
+  min-height: 40px;
 }
 .blend-btn {
-  background: #fff8e1;
-  color: #b8860b;
+  background: var(--color-panel-warm);
+  color: var(--color-gold-dark);
+  box-shadow: 0 4px 0 var(--color-gold);
 }
 .flashcard-nav {
   display: flex;
   justify-content: center;
   gap: 12px;
-  margin-top: 16px;
+  margin-top: 18px;
   flex-wrap: wrap;
 }
 
 /* Blend (拼讀練習) view */
-.blend-panel { text-align: center; padding: 24px; }
-.blend-instruction { font-size: 18px; font-weight: 700; margin: 8px 0 16px; }
+.blend-panel { text-align: center; padding: 26px; }
+.blend-instruction { font-size: 18px; font-weight: 800; margin: 8px 0 16px; color: var(--color-text); }
 .blend-choices {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(112px, 1fr));
   gap: 14px;
   margin: 20px 0;
 }
@@ -406,13 +531,16 @@ body {
   align-items: center;
   gap: 8px;
   padding: 16px 10px;
-  border: none;
-  border-radius: 16px;
-  background: #f6f9fc;
-  box-shadow: 0 4px 0 #dce4ec;
-  font-family: inherit;
+  border: 2px solid var(--color-border-soft);
+  border-radius: var(--radius-sm);
+  background: var(--color-panel-alt);
+  box-shadow: 0 5px 0 var(--color-border-soft);
+  font-family: var(--font-body);
   cursor: pointer;
+  min-height: 56px;
+  transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.15s ease;
 }
+.blend-choice:active { transform: translateY(3px); }
 .blend-choice-visual {
   font-size: 48px;
   min-height: 56px;
@@ -423,58 +551,61 @@ body {
 .blend-choice-visual .swatch { width: 48px; height: 48px; }
 .blend-choice-word { font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--color-text); }
 .blend-choice.correct-flash {
-  background: #e3fbf3;
-  box-shadow: 0 0 0 4px rgba(6, 214, 160, 0.25);
+  background: #dcf7e6;
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 4px rgba(47, 183, 101, 0.3);
 }
-.blend-choice.shake { animation: shake 0.4s ease; }
+.blend-choice.shake { animation: shake 0.4s ease; border-color: var(--color-danger); }
 .blend-choice:disabled { opacity: 0.4; cursor: not-allowed; }
 
 .answer-slots {
   display: flex;
   justify-content: center;
-  gap: 8px;
+  gap: 9px;
   flex-wrap: wrap;
-  margin-bottom: 24px;
+  margin-bottom: 26px;
   min-height: 60px;
 }
 .answer-slot {
-  width: 48px;
-  height: 56px;
-  border-radius: 12px;
-  border: 3px dashed #cfd8dc;
-  background: #fafbfc;
+  width: 50px;
+  height: 58px;
+  border-radius: var(--radius-sm);
+  border: 3px dashed var(--color-border-soft);
+  background: var(--color-panel);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 26px;
+  font-family: var(--font-heading);
+  font-size: 27px;
   font-weight: 800;
   text-transform: uppercase;
+  color: var(--color-text);
   cursor: pointer;
   transition: transform 0.12s ease, border-color 0.15s ease, background 0.15s ease;
 }
 /* 音節分組視覺輔助：只有多音節單字才會套用（見 app.js 的 syllableGroupIndex）。
    底色只在未作答/未提示的狀態顯示，一旦 filled/hinted 由後面的規則蓋過，
    組間距（group-start 的 margin-left）則不論填字狀態都會保留，是比較穩定的分組線索。 */
-.answer-slot.group-a { background: #eef2ff; }
-.answer-slot.group-b { background: #fff4e6; }
-.answer-slot.group-start { margin-left: 14px; }
+.answer-slot.group-a { background: var(--color-panel-alt); }
+.answer-slot.group-b { background: var(--color-panel-warm); }
+.answer-slot.group-start { margin-left: 16px; }
 
 .answer-slot.filled {
   border-style: solid;
   border-color: var(--color-primary-dark);
-  background: #fff6e0;
+  background: #ffe7d6;
 }
 .answer-slot.hinted {
   border-style: solid;
-  border-color: #b8860b;
-  background: #fff8e1;
-  box-shadow: 0 0 0 3px rgba(184,134,11,0.18);
+  border-color: var(--color-gold-dark);
+  background: var(--color-panel-warm);
+  box-shadow: 0 0 0 3px rgba(184, 121, 10, 0.28);
   cursor: default;
 }
 .answer-slot.correct-flash {
   border-color: var(--color-accent);
-  background: #e3fbf3;
-  box-shadow: 0 0 0 4px rgba(6,214,160,0.25);
+  background: #dcf7e6;
+  box-shadow: 0 0 0 4px rgba(47, 183, 101, 0.3);
 }
 .answer-slot.shake {
   animation: shake 0.4s ease;
@@ -489,94 +620,106 @@ body {
   min-height: 68px;
 }
 .letter-tile {
-  width: 52px;
-  height: 60px;
-  border-radius: 12px;
-  border: none;
-  background: linear-gradient(180deg, #ffffff, #eef2f7);
-  box-shadow: 0 4px 0 #c7d0da;
-  font-size: 26px;
+  width: 54px;
+  height: 62px;
+  border-radius: var(--radius-sm);
+  border: 2px solid var(--color-border);
+  background: linear-gradient(180deg, #ffffff, var(--color-panel-alt));
+  box-shadow: 0 5px 0 var(--color-border);
+  font-family: var(--font-heading);
+  font-size: 27px;
   font-weight: 800;
+  color: var(--color-text);
   text-transform: uppercase;
   cursor: grab;
   transition: transform 0.12s ease, opacity 0.15s ease;
   touch-action: none;
 }
-.letter-tile:active { transform: translateY(2px); }
+.letter-tile:active { transform: translateY(3px); }
 .letter-tile.used { opacity: 0; pointer-events: none; }
-.letter-tile.dragging { cursor: grabbing; z-index: 20; box-shadow: 0 8px 16px rgba(0,0,0,0.2); }
+.letter-tile.dragging { cursor: grabbing; z-index: 20; box-shadow: 0 10px 18px rgba(0, 0, 0, 0.35); }
 
 .feedback-message {
   text-align: center;
-  min-height: 28px;
-  font-weight: 700;
-  font-size: 18px;
-  margin-top: 16px;
+  min-height: 30px;
+  font-weight: 800;
+  font-size: 19px;
+  margin-top: 18px;
 }
-.feedback-message.correct { color: var(--color-accent); }
-.feedback-message.wrong { color: var(--color-danger); }
+.feedback-message.correct { color: var(--color-accent-dark); }
+.feedback-message.wrong { color: var(--color-danger-dark); }
 
-#btn-next-question {
+/* :not([hidden]) 是必要的守門：#btn-next-question 是 ID 選擇器，若直接寫
+   `display: block` 會贏過瀏覽器 UA stylesheet 的 `[hidden]{display:none}`
+   （author 樣式表的 normal 宣告，優先度規則上永遠贏過 UA 樣式表，跟選擇器
+   specificity 無關），導致按鈕在題目還沒答對時就已經被強制顯示。 */
+#btn-next-question:not([hidden]) {
   display: block;
-  margin: 16px auto 0;
+  margin: 18px auto 0;
   animation: fadeIn 0.25s ease;
 }
 
-/* Result */
-/* #three-fx-layer 是 fixed + z-index:10 的定位元素，會蓋在一般 static 排版的 .panel
+/* ==========================================================================
+   Result
+   #three-fx-layer 是 fixed + z-index 定位元素，會蓋在一般 static 排版的 .panel
    之上（CSS 疊層順序跟 DOM 順序無關，跟是否有定位/z-index 有關）。過關的獎盃/禮物盒/
    寶箱是不透明實體模型，會直接擋住結果畫面的星星和文字，所以這裡要讓 .result-panel
    自己也變成有 z-index 的定位元素、疊在特效層之上——超出面板範圍的模型部分（例如展示
-   時稍微轉出面板邊緣）還是看得到，面板本身覆蓋到的地方就蓋掉模型，不會擋住文字。 */
-.result-panel { position: relative; z-index: 15; text-align: center; padding: 40px 24px; }
-.result-stars { font-size: 48px; margin: 12px 0; }
+   時稍微轉出面板邊緣）還是看得到，面板本身覆蓋到的地方就蓋掉模型，不會擋住文字。
+   ========================================================================== */
+.result-panel { position: relative; z-index: var(--z-result); text-align: center; padding: 42px 24px; }
+.result-stars { font-size: 50px; margin: 14px 0; }
 .result-star-item {
   display: inline-block;
   opacity: 0;
   animation: starPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
-.result-message { font-size: 18px; color: var(--color-primary-dark); font-weight: 700; }
+#result-accuracy { color: var(--color-text); font-weight: 800; font-size: 17px; }
+.result-message { font-size: 19px; color: var(--color-primary-dark); font-weight: 800; }
 
 /* Progress table */
 .progress-table {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  margin-bottom: 20px;
+  margin-bottom: 22px;
 }
 .progress-row {
   display: flex;
   align-items: center;
   gap: 10px;
-  background: #f6f9fc;
-  border-radius: 14px;
-  padding: 12px 16px;
+  background: var(--color-panel-alt);
+  border: 2px solid var(--color-border-soft);
+  border-radius: var(--radius-sm);
+  padding: 14px 16px;
   flex-wrap: wrap;
 }
-.progress-row .progress-theme-name { font-weight: 700; flex: 1; min-width: 90px; }
-.progress-row .progress-tier { font-size: 14px; color: var(--color-text-soft); }
-.collectibles-title { margin: 20px 0 4px; font-size: 18px; }
-.collectibles-hint { margin: 0 0 12px; font-size: 13px; color: var(--color-text-soft); }
+.progress-row .progress-theme-name { font-weight: 800; flex: 1; min-width: 90px; color: var(--color-text); }
+.progress-row .progress-tier { font-size: 14px; color: var(--color-text-soft); font-weight: 700; }
+.collectibles-title { margin: 22px 0 6px; font-size: 19px; font-family: var(--font-heading); color: var(--color-text); }
+.collectibles-hint { margin: 0 0 14px; font-size: 14px; color: var(--color-text-soft); font-weight: 700; }
 .collectibles-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
   gap: 10px;
-  margin-bottom: 20px;
+  margin-bottom: 22px;
 }
 .sticker-item {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 4px;
-  background: #f6f9fc;
-  border-radius: 14px;
-  padding: 10px 6px;
+  background: var(--color-panel-alt);
+  border: 2px solid var(--color-border-soft);
+  border-radius: var(--radius-sm);
+  padding: 12px 6px;
   text-align: center;
 }
 .sticker-item-icon { font-size: 28px; }
-.sticker-item-label { font-size: 11px; color: var(--color-text-soft); line-height: 1.3; }
+.sticker-item-label { font-size: 12px; color: var(--color-text-soft); font-weight: 700; line-height: 1.3; }
+.sticker-item.locked { background: #ece7f2; border-color: #d9d3e6; }
 .sticker-item.locked .sticker-item-icon { opacity: 0.35; filter: grayscale(1); }
-.sticker-item.collected { background: #fff6e0; }
+.sticker-item.collected { background: var(--color-panel-warm); border-color: var(--color-gold); }
 
 .progress-io {
   display: flex;
@@ -590,19 +733,19 @@ body {
   justify-content: center;
   gap: 10px;
   flex-wrap: wrap;
-  margin-top: 20px;
-  padding-top: 16px;
-  border-top: 1px dashed #e0e0e0;
+  margin-top: 22px;
+  padding-top: 18px;
+  border-top: 2px dashed var(--color-border-soft);
 }
-.threefx-status { font-size: 14px; font-weight: 700; }
-.threefx-status.ok { color: var(--color-accent); }
-.threefx-status.fail { color: var(--color-danger); }
+.threefx-status { font-size: 14px; font-weight: 800; }
+.threefx-status.ok { color: var(--color-accent-dark); }
+.threefx-status.fail { color: var(--color-danger-dark); }
 
 /* three.js 裝飾特效層：純視覺、永遠不可互動，點擊完全穿透到底下的遊戲 UI */
 #three-fx-layer {
   position: fixed;
   inset: 0;
-  z-index: 10;
+  z-index: var(--z-threefx);
   pointer-events: none;
 }
 #three-fx-layer canvas {
@@ -611,27 +754,31 @@ body {
   height: 100%;
 }
 
-/* Mascot */
+/* ==========================================================================
+   Mascot — 不可對 .mascot-wrap 加 transform/filter/backdrop-filter，
+   否則會變成 .mascot.celebrate-correct(position:fixed) 的定位容器，
+   讓答對特寫縮在左下角、無法置中全螢幕。
+   ========================================================================== */
 .mascot-wrap {
   position: fixed;
-  bottom: 16px;
-  left: 16px; /* 手機上慣用右手操作容易擋住右下角，改放左下角 */
+  bottom: 18px;
+  left: 18px; /* 手機上慣用右手操作容易擋住右下角，改放左下角 */
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   gap: 8px;
   pointer-events: none;
-  z-index: 5;
+  z-index: var(--z-mascot);
 }
-/* 答對特寫期間把 wrapper 的 z-index 拉到 200：.mascot-wrap 本身用 position+z-index 建立了
+/* 答對特寫期間把 wrapper 的 z-index 拉到最高：.mascot-wrap 本身用 position+z-index 建立了
    獨立的堆疊環境，裡面的 .mascot 就算自己開更高的 z-index 也逃不出這個環境、蓋不過
-   #three-fx-layer(10)／.toast(30) 這些跟 mascot-wrap 同層級的手足元素——一定要拉高
+   #three-fx-layer／.toast 這些跟 mascot-wrap 同層級的手足元素——一定要拉高
    wrapper 自己的 z-index，特寫畫面才能真的疊在最上層。 */
-.mascot-wrap.celebrating { z-index: 200; }
+.mascot-wrap.celebrating { z-index: var(--z-mascot-celebrate); }
 .mascot {
-  width: 48px;
-  height: 48px;
-  filter: drop-shadow(0 4px 6px rgba(0,0,0,0.15));
+  width: 50px;
+  height: 50px;
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.45));
   animation: idleBob 3s ease-in-out infinite;
 }
 .mascot img { display: block; width: 100%; height: 100%; object-fit: contain; }
@@ -651,15 +798,16 @@ body {
 .mascot.pulse { animation: idlePulse 0.8s ease; }
 
 .mascot-bubble {
-  max-width: 160px;
-  background: #fff;
-  color: #333;
+  max-width: 170px;
+  background: var(--color-panel);
+  color: var(--color-text);
   font-size: 15px;
-  font-weight: 600;
+  font-weight: 800;
   line-height: 1.4;
-  padding: 8px 12px;
-  border-radius: 14px;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  border: 2px solid var(--color-border);
+  box-shadow: 0 5px 0 var(--color-border), 0 8px 16px rgba(0, 0, 0, 0.3);
   position: relative;
   animation: fadeIn 0.2s ease;
 }
@@ -667,30 +815,33 @@ body {
   content: '';
   position: absolute;
   left: 16px;
-  bottom: -5px;
-  width: 10px;
-  height: 10px;
-  background: #fff;
+  bottom: -8px;
+  width: 12px;
+  height: 12px;
+  background: var(--color-panel);
+  border-right: 2px solid var(--color-border);
+  border-bottom: 2px solid var(--color-border);
   transform: rotate(45deg);
 }
 
 /* Toast */
 .toast {
   position: fixed;
-  bottom: 90px;
+  bottom: 96px;
   left: 50%;
   transform: translateX(-50%);
-  background: #333;
-  color: white;
-  padding: 10px 18px;
+  background: var(--color-border);
+  color: var(--color-text-invert);
+  padding: 12px 20px;
   border-radius: 999px;
   font-size: 14px;
-  z-index: 30;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  font-weight: 700;
+  z-index: var(--z-toast);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
 }
 
-/* 貼紙揭曉彈窗：開寶箱動畫播完後跳出，z-index 要蓋過 .result-panel(15) 跟
-   #three-fx-layer(10)，確保永遠疊在最上層。
+/* 貼紙揭曉彈窗：開寶箱動畫播完後跳出，z-index 要蓋過 .result-panel 跟
+   #three-fx-layer，確保永遠疊在最上層。
    注意：一定要用 :not([hidden])，不能直接對 .sticker-modal 設 display:flex——
    class 選擇器跟 [hidden] 屬性選擇器的優先度是平手（都是 0,1,0），平手時
    author stylesheet（這份 CSS）會贏過瀏覽器內建的 UA stylesheet（[hidden]{display:none}
@@ -699,46 +850,56 @@ body {
 .sticker-modal:not([hidden]) {
   position: fixed;
   inset: 0;
-  z-index: 50;
+  z-index: var(--z-sticker);
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(58, 58, 58, 0.55);
+  background: rgba(20, 12, 42, 0.65);
   padding: 16px;
 }
 .sticker-modal-card {
   background: var(--color-panel);
+  border: var(--border-w) solid var(--color-border);
   border-radius: var(--radius);
-  box-shadow: var(--shadow);
-  padding: 32px 28px;
+  box-shadow: var(--shadow-panel);
+  padding: 34px 28px;
   text-align: center;
   max-width: 320px;
   width: 100%;
   animation: starPop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
-.sticker-modal-title { font-size: 20px; font-weight: 700; color: var(--color-primary-dark); margin: 0 0 12px; }
-.sticker-modal-icon { font-size: 64px; margin-bottom: 8px; }
-.sticker-modal-name { font-size: 16px; font-weight: 700; margin: 0 0 20px; }
+.sticker-modal-title { font-size: 21px; font-weight: 800; color: var(--color-primary-dark); margin: 0 0 14px; }
+.sticker-modal-icon { font-size: 66px; margin-bottom: 10px; }
+.sticker-modal-name { font-size: 16px; font-weight: 800; margin: 0 0 22px; color: var(--color-text); }
 
-/* Animations */
+/* ==========================================================================
+   Animations
+   注意：celebrateCorrect / cheer / tiltLeft / tiltRight / idlePulse 這五個
+   關鍵影格名稱是 mascot.js 用 e.animationName 精準比對字串來判斷動畫播完，
+   絕對不能改名，且必須是真的 @keyframes animation（不能改成 transition）。
+   ========================================================================== */
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(6px); }
   to { opacity: 1; transform: translateY(0); }
 }
+@keyframes panelIn {
+  from { opacity: 0; transform: translateY(14px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
 @keyframes bounce {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-14px); }
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-16px) rotate(8deg); }
 }
 @keyframes shake {
   0%, 100% { transform: translateX(0); }
-  20% { transform: translateX(-8px); }
-  40% { transform: translateX(8px); }
-  60% { transform: translateX(-6px); }
-  80% { transform: translateX(6px); }
+  20% { transform: translateX(-9px); }
+  40% { transform: translateX(9px); }
+  60% { transform: translateX(-7px); }
+  80% { transform: translateX(7px); }
 }
 @keyframes idleBob {
   0%, 100% { transform: translateY(0) rotate(0deg); }
-  50% { transform: translateY(-6px) rotate(-3deg); }
+  50% { transform: translateY(-7px) rotate(-4deg); }
 }
 /* rotateY 轉一圈安排在 15%~85%（跟放大停留區間對齊），剛好在停留期間轉滿 360 度回到正面，
    0%/100% 維持 rotateY(0) 讓縮回原位時角色是正臉，不會卡在側面或背面。 */
@@ -750,35 +911,36 @@ body {
 }
 @keyframes cheer {
   0%, 100% { transform: rotate(0deg) scale(1); }
-  25% { transform: rotate(-15deg) scale(1.1); }
-  75% { transform: rotate(15deg) scale(1.1); }
+  25% { transform: rotate(-18deg) scale(1.15); }
+  75% { transform: rotate(18deg) scale(1.15); }
 }
 @keyframes tiltLeft {
   0%, 100% { transform: rotate(0deg); }
-  50% { transform: rotate(-14deg); }
+  50% { transform: rotate(-16deg); }
 }
 @keyframes tiltRight {
   0%, 100% { transform: rotate(0deg); }
-  50% { transform: rotate(14deg); }
+  50% { transform: rotate(16deg); }
 }
 @keyframes idlePulse {
   0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.2); }
+  50% { transform: scale(1.25); }
 }
 @keyframes starPop {
   0% { opacity: 0; transform: scale(0.2) rotate(-30deg); }
   60% { opacity: 1; transform: scale(1.3) rotate(10deg); }
   100% { opacity: 1; transform: scale(1) rotate(0deg); }
 }
+
 /* Responsive / touch */
 @media (max-width: 600px) {
-  body { padding: 16px 10px 56px; }
-  .panel { padding: 16px; }
-  .letter-tile, .answer-slot { width: 44px; height: 52px; font-size: 22px; }
+  body { padding: 18px 10px 60px; }
+  .panel { padding: 18px; }
+  .letter-tile, .answer-slot { width: 46px; height: 54px; font-size: 22px; }
   .prompt-visual { font-size: 64px; min-height: 80px; }
   .flashcard-visual { font-size: 72px; min-height: 90px; }
   .flashcard-word { font-size: 30px; }
-  .mascot { width: 36px; height: 36px; }
-  .mascot-bubble { font-size: 12px; max-width: 130px; padding: 6px 10px; }
+  .mascot { width: 38px; height: 38px; }
+  .mascot-bubble { font-size: 12px; max-width: 130px; padding: 8px 12px; }
   .game-title { font-size: 26px; }
 }

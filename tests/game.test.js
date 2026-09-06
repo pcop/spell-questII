@@ -17,7 +17,8 @@ import {
   setProgressStorage,
   MIN_WORDS_PER_LEVEL,
 } from '../src/game/index.js';
-import { createMemoryStorage } from '../src/progress/store.js';
+import { createMemoryStorage, loadProgress, saveProgress } from '../src/progress/store.js';
+import { levelKey } from '../src/progress/schema.js';
 
 // checkAnswer()/finishLevel() 逐題持久化，每答一題就讀寫一次進度（跟一代
 // recordAnswer() 對等，見 src/game/session.js 開頭說明）。為了不讓各個測試案例
@@ -82,6 +83,33 @@ function playAllCorrect(session) {
     const { finished } = advanceToNextQuestion(session);
     if (finished) break;
   }
+}
+
+// 直接在指定 storage 裡灌一筆 wordProgress（不透過真的玩一輪關卡），
+// 用來精準控制「某個字在某個 tier 底下累積了多少 correct/wrong」，
+// 才能穩定地測 getReviewWords 的篩選/排序邏輯，不用依賴洗牌後題目出現的順序。
+// 注意：必須搭配 setProgressStorage(storage) 呼叫同一個 storage 物件，
+// 這樣 wordbank.js/session.js 內部讀到的才會是同一份資料
+// （loadProgress()/saveProgress() 不帶參數時預設用真實 localStorage，
+// 不會自動套用 setProgressStorage 設定的 override）。
+function seedWordProgress(storage, themeId, tier, wordId, correct, wrong) {
+  const progress = loadProgress(storage);
+  const key = levelKey(themeId, tier);
+  if (!progress.levels[key]) {
+    progress.levels[key] = {
+      themeId,
+      tier,
+      attempts: 0,
+      correctCount: 0,
+      bestAccuracy: 0,
+      bestStars: 0,
+      completed: false,
+      wordProgress: {},
+      lastPlayedAt: null,
+    };
+  }
+  progress.levels[key].wordProgress[wordId] = { correct, wrong };
+  saveProgress(progress, storage);
 }
 
 // ---------- getThemes / getLevelDefsForTheme ----------
@@ -361,5 +389,161 @@ describe('finishLevel 星等（calcStars）邊界條件', () => {
     const secondResult = finishLevel(second);
     expect(secondResult.stars).toBe(3);
     expect(secondResult.isNewSticker).toBe(false);
+  });
+});
+
+// ---------- Phase 3：錯題本／複習模式 ----------
+
+describe('錯題複習虛擬關卡（getLevelDefsForTheme / getWordsForLevel）', () => {
+  it('有符合條件的錯題時，getLevelDefsForTheme 最後一項是 kind:"review"，字數/label 正確', () => {
+    const storage = createMemoryStorage();
+    setProgressStorage(storage);
+
+    // number_one 答錯一次、都還沒答對過 -> wrong=1,correct=0，correct-wrong=-1<2，符合複習條件
+    seedWordProgress(storage, 'numbers', '1', 'number_one', 0, 1);
+
+    const defs = getLevelDefsForTheme('numbers');
+    expect(defs).toHaveLength(4); // 原本 3 個 tier + 1 個 review
+
+    const review = defs[defs.length - 1];
+    expect(review.key).toBe('review');
+    expect(review.kind).toBe('review');
+    expect(review.wordCount).toBe(1);
+    expect(review.label).toContain('錯題複習');
+    expect(review.label).toContain('1 字');
+    // 其他非 review 的關卡仍然要有明確的 kind
+    expect(defs[0].kind).toBe('tier');
+  });
+
+  it('自訂關卡主題（other）符合條件時，review 一樣接在 custom 關卡後面，kind 標記正確', () => {
+    const storage = createMemoryStorage();
+    setProgressStorage(storage);
+    const words = getWordsForLevel('other', 'summer_review_1');
+    expect(words.length).toBeGreaterThan(0);
+    seedWordProgress(storage, 'other', 'summer_review_1', words[0].id, 0, 2);
+
+    const defs = getLevelDefsForTheme('other');
+    const review = defs.find((d) => d.kind === 'review');
+    expect(review).toBeTruthy();
+    expect(review.key).toBe('review');
+    expect(review.wordCount).toBe(1);
+    expect(defs.filter((d) => d.kind === 'custom').length).toBe(defs.length - 1);
+  });
+
+  it('沒有任何符合條件的錯題時，回傳陣列不包含複習關卡', () => {
+    const storage = createMemoryStorage();
+    setProgressStorage(storage);
+    // 完全沒有作答紀錄
+    const defsNoHistory = getLevelDefsForTheme('numbers');
+    expect(defsNoHistory.find((d) => d.kind === 'review')).toBeUndefined();
+
+    // 答對很多次、答錯很少的字不該被視為需要複習（correct-wrong >= 2）
+    seedWordProgress(storage, 'numbers', '1', 'number_two', 5, 1);
+    const defsHealed = getLevelDefsForTheme('numbers');
+    expect(defsHealed.find((d) => d.kind === 'review')).toBeUndefined();
+  });
+
+  it('getWordsForLevel(themeId, "review") 回傳符合條件的單字，依「淨錯次數」降冪排序', () => {
+    const storage = createMemoryStorage();
+    setProgressStorage(storage);
+
+    seedWordProgress(storage, 'numbers', '1', 'number_one', 0, 3); // diff=3，最需要複習
+    seedWordProgress(storage, 'numbers', '1', 'number_two', 0, 2); // diff=2
+    seedWordProgress(storage, 'numbers', '1', 'number_ten', 0, 1); // diff=1
+    seedWordProgress(storage, 'numbers', '1', 'number_six', 5, 0); // 從沒錯過，不該出現
+
+    const words = getWordsForLevel('numbers', 'review');
+    expect(words.map((w) => w.id)).toEqual(['number_one', 'number_two', 'number_ten']);
+  });
+
+  it('複習關卡的單字排序會反映跨多個關卡加總後的淨錯次數', () => {
+    const storage = createMemoryStorage();
+    setProgressStorage(storage);
+    // 同一個字在兩個不同 tier 底下都有紀錄（理論上不常見，但驗證加總邏輯）：
+    // number_ten 在 tier1 錯 1 次，又假設也出現在另一個關卡 key 底下錯 2 次
+    // （用不存在的 tier key 純粹測加總，不代表真的有這個關卡）。
+    seedWordProgress(storage, 'numbers', '1', 'number_ten', 0, 1);
+    seedWordProgress(storage, 'numbers', '2', 'number_ten', 0, 2);
+    seedWordProgress(storage, 'numbers', '1', 'number_one', 0, 1);
+
+    const words = getWordsForLevel('numbers', 'review');
+    // number_ten 加總後 wrong=3，應該排在只錯 1 次的 number_one 前面
+    expect(words.map((w) => w.id)).toEqual(['number_ten', 'number_one']);
+  });
+});
+
+describe('複習關卡的完整作答流程', () => {
+  it('startLevel + checkAnswer + finishLevel 能正常跑完，isNewSticker 永遠是 false，且不寫入 collectibles', () => {
+    const storage = createMemoryStorage();
+    setProgressStorage(storage);
+
+    seedWordProgress(storage, 'numbers', '1', 'number_one', 0, 2);
+    seedWordProgress(storage, 'numbers', '1', 'number_two', 0, 1);
+
+    const session = startLevel('numbers', 'review');
+    expect(session.words.length).toBe(2);
+    expect(session.kind).toBe('review');
+
+    playAllCorrect(session);
+    const result = finishLevel(session);
+
+    // 全部第一次就答對、沒用提示 -> 理論上該拿 3 星，用來確認「不給貼紙」是
+    // 特別針對 review 關卡的規則，不是因為星等不夠。
+    expect(result.stars).toBe(3);
+    expect(result.isNewSticker).toBe(false);
+
+    const progress = loadProgress(storage);
+    expect(progress.collectibles[levelKey('numbers', 'review')]).toBeFalsy();
+
+    // 複習答對後，wordProgress 的 correct 計數要正常增加（複習存在的意義）。
+    const lp = progress.levels[levelKey('numbers', 'review')];
+    expect(lp.wordProgress['number_one'].correct).toBe(1);
+    expect(lp.wordProgress['number_two'].correct).toBe(1);
+  });
+
+  it('複習關卡答對到淨勝 2 次以上後，該字會從下一次的複習清單畢業', () => {
+    const storage = createMemoryStorage();
+    setProgressStorage(storage);
+
+    // number_one: wrong=1,correct=0 -> 符合複習條件
+    seedWordProgress(storage, 'numbers', '1', 'number_one', 0, 1);
+    expect(getWordsForLevel('numbers', 'review').map((w) => w.id)).toEqual(['number_one']);
+
+    // 每複習一次答對，複習關卡自己的 wordProgress.correct 就 +1（累加在
+    // `numbers_review` 這個獨立的 level 底下），跟原本 tier1 的 wrong=1 加總：
+    // 第 1 次答對後 correct=1,wrong=1 -> diff=0，仍 <2，還沒畢業
+    let session = startLevel('numbers', 'review');
+    playAllCorrect(session);
+    finishLevel(session);
+    expect(getWordsForLevel('numbers', 'review').map((w) => w.id)).toEqual(['number_one']);
+
+    // 第 2 次答對後 correct=2,wrong=1 -> diff=1，仍 <2，還沒畢業
+    session = startLevel('numbers', 'review');
+    playAllCorrect(session);
+    finishLevel(session);
+    expect(getWordsForLevel('numbers', 'review').map((w) => w.id)).toEqual(['number_one']);
+
+    // 第 3 次答對後 correct=3,wrong=1 -> diff=2，不再 <2，畢業離開複習清單
+    session = startLevel('numbers', 'review');
+    playAllCorrect(session);
+    finishLevel(session);
+    expect(getWordsForLevel('numbers', 'review')).toHaveLength(0);
+  });
+});
+
+describe('getValidLevelCombos 排除複習關卡', () => {
+  it('即使有符合條件的錯題，combos 也不包含 kind:"review" 的組合', () => {
+    const storage = createMemoryStorage();
+    setProgressStorage(storage);
+    seedWordProgress(storage, 'numbers', '1', 'number_one', 0, 1);
+
+    // 先確認 review 關卡真的存在（playable），確保下面的斷言不是因為根本沒產生 review 而通過
+    const defs = getLevelDefsForTheme('numbers');
+    const review = defs.find((d) => d.kind === 'review');
+    expect(review).toBeTruthy();
+
+    const combos = getValidLevelCombos();
+    expect(combos).not.toContainEqual({ themeId: 'numbers', key: 'review' });
+    expect(combos.some((c) => c.themeId === 'numbers' && c.key === 'review')).toBe(false);
   });
 });

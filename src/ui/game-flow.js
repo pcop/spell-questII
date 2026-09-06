@@ -216,7 +216,9 @@ export function renderThemeGrid() {
     let totalStars = 0;
     let maxStars = 0;
     getLevelDefsForTheme(theme.id).forEach((def) => {
-      if (!def.playable) return;
+      // 錯題複習是虛擬關卡（Phase 3），不算進主題卡片顯示的星等分母，
+      // 不然孩子錯得越多、主題卡片顯示的滿星門檻反而變越高。
+      if (!def.playable || def.kind === 'review') return;
       maxStars += 3;
       const lp = progress.levels[progressLevelKey(theme.id, def.key)];
       totalStars += lp ? lp.bestStars : 0;
@@ -579,6 +581,7 @@ export function handleHintClick() {
   if (!session) return;
   const res = useHint(session);
   if (!res) return;
+  mascot.mascotReactHint();
   const view = getCurrentQuestionView(session);
   renderAnswerSlots(view);
   renderTiles(view);
@@ -612,7 +615,7 @@ function handleCorrect(entry) {
   msg.textContent = pickRandom(messages.praise);
   msg.className = 'feedback-message correct';
   playCorrectSound();
-  mascot.mascotReactCorrect();
+  mascot.mascotReactCorrectEmotion();
   // 進得了拼字關卡就代表 three.js 已經確認可用（見「開始遊戲」的硬性門檻
   // 檢查），呼叫這裡純粹沿用一代寫法，不特別防禦。
   celebrateCorrect();
@@ -627,6 +630,7 @@ function handleWrong(entry) {
   msg.textContent = pickRandom(messages.encourage);
   msg.className = 'feedback-message wrong';
   playWrongSound();
+  mascot.mascotReactWrong();
   clearTimeout(pendingRetryTimeoutId);
   // 動畫時長是 UI 層的事：先讓孩子看清楚搖晃動畫跟錯誤提示 0.5 秒，再呼叫
   // `resetForRetry()` 真的清空槽位、解鎖讓玩家重試（已提示的槽位會保留）。
@@ -671,7 +675,7 @@ function renderResult(stars, accuracy, isNewSticker) {
   $('result-accuracy').textContent = '第一次答對率：' + Math.round(accuracy * 100) + '%';
   const pool = messages.result ? messages.result[stars] : null;
   $('result-message').textContent = pool && pool.length ? pickRandom(pool) : '';
-  mascot.mascotReact('cheer');
+  mascot.mascotReactCheer();
   const themeId = currentThemeId;
   const levelKeyValue = currentLevelKey;
   if (isNewSticker) {

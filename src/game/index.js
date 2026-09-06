@@ -64,6 +64,18 @@
 //      這個模組層級開關：生產程式碼完全不用呼叫（不呼叫＝原本的真實
 //      localStorage 行為不變），只有測試需要各自獨立 storage 隔離時才呼叫，
 //      搭配 `src/progress/store.js` 既有的 `createMemoryStorage()` 使用。
+//      （Phase 3 更新：這個 export 的實作搬到 `./wordbank.js`，因為複習關卡
+//      判斷也需要讀 `src/progress`，兩邊要共用同一份 storage override 才不會
+//      各自為政讀到不一致的進度；`index.js` 對外的簽名/行為完全不變。）
+//   8. Phase 3「錯題本／複習模式」（見 `規劃.md` D 段）：`getLevelDefsForTheme()`
+//      回傳陣列最後多一個虛擬關卡（`key:'review'`），沿用既有拼字關卡畫面/
+//      判分邏輯，不是新畫面/新流程。`LevelDef` 新增 `kind` 欄位
+//      （`'tier'|'custom'|'review'`），方便呼叫端分辨三種來源；`getWordsForLevel`
+//      對 `levelKey:'review'` 回傳符合複習條件的單字（依「最需要複習」排序）；
+//      `finishLevel()` 對 `kind:'review'` 的關卡永遠回傳 `isNewSticker:false`
+//      且不寫 `progress.collectibles`（複習可無限次重打，不能刷貼紙）；
+//      `getValidLevelCombos()` 排除複習虛擬關卡（進度總覽/貼紙簿不需要它）。
+//      細節見 `./wordbank.js`／`./session.js` 內的註解。
 // ---------------------------------------------------------------------------
 
 export {
@@ -74,6 +86,7 @@ export {
   getWordsForLevel,
   MIN_WORDS_PER_LEVEL,
   getFullWordBank,
+  setProgressStorage,
 } from './wordbank.js';
 
 export {
@@ -86,7 +99,6 @@ export {
   advanceToNextQuestion,
   finishLevel,
   resetForRetry,
-  setProgressStorage,
 } from './session.js';
 
 /**
@@ -112,6 +124,10 @@ export {
  * @property {number} wordCount
  * @property {boolean} playable - 已套用 `MIN_WORDS_PER_LEVEL`（一代預設 3）規則，
  *   單字數不足時為 false，UI 要把這個關卡卡片渲染成禁用狀態
+ * @property {'tier'|'custom'|'review'} kind - 新增欄位（Phase 3）：這個關卡定義
+ *   的來源——`'tier'` 是長度分級關卡、`'custom'` 是主題自訂關卡、`'review'` 是
+ *   錯題複習虛擬關卡（`key` 固定是字串 `'review'`）。`getValidLevelCombos()`
+ *   排除 `'review'`；`finishLevel()` 對 `'review'` 關卡不給貼紙。
  */
 
 /**
