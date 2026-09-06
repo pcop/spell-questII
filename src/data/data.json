@@ -110,7 +110,13 @@
     { "id": "other_case",       "word": "case",       "theme": "other", "emoji": "💼", "zh": "手提箱", "phonics": { "chunks": ["c", "a", "s", "e"], "silent": [3] } },
     { "id": "other_vase",       "word": "vase",       "theme": "other", "emoji": "🏺", "zh": "花瓶", "phonics": { "chunks": ["v", "a", "s", "e"], "silent": [3] } },
     { "id": "other_date",       "word": "date",       "theme": "other", "emoji": "📅", "zh": "日期", "phonics": { "chunks": ["d", "a", "t", "e"], "silent": [3] } },
-    { "id": "other_gate",       "word": "gate",       "theme": "other", "emoji": "🚪", "zh": "大門", "phonics": { "chunks": ["g", "a", "t", "e"], "silent": [3] } }
+    { "id": "other_gate",       "word": "gate",       "theme": "other", "emoji": "🚪", "zh": "大門", "phonics": { "chunks": ["g", "a", "t", "e"], "silent": [3] } },
+    { "id": "other_jump",       "word": "jump",       "theme": "other", "emoji": "🦘", "zh": "跳",   "phonics": { "chunks": ["j", "u", "m", "p"], "silent": [] } },
+    { "id": "other_sleep",      "word": "sleep",      "theme": "other", "emoji": "😴", "zh": "睡覺", "phonics": { "chunks": ["s", "l", "ee", "p"], "silent": [] } },
+    { "id": "other_run",        "word": "run",        "theme": "other", "emoji": "🏃", "zh": "跑",   "phonics": { "chunks": ["r", "u", "n"], "silent": [] } },
+    { "id": "other_walk",       "word": "walk",       "theme": "other", "emoji": "🚶", "zh": "走路", "phonics": { "chunks": ["w", "a", "l", "k"], "silent": [2] } },
+    { "id": "other_read",       "word": "read",       "theme": "other", "emoji": "📖", "zh": "閱讀", "phonics": { "chunks": ["r", "ea", "d"], "silent": [] } },
+    { "id": "other_eat",        "word": "eat",        "theme": "other", "emoji": "🍴", "zh": "吃",   "phonics": { "chunks": ["ea", "t"], "silent": [] } }
   ],
   "themes": [
     { "id": "animals", "name": "動物",    "icon": "🐾",  "color": "#ffb703" },
@@ -126,7 +132,7 @@
           "id": "summer_review_1",
           "label": "暑假複習1",
           "distractorCount": 2,
-          "wordIds": ["other_cake", "other_bake", "other_lake", "other_rake", "other_tape", "other_cave", "other_cape", "other_wave", "other_turtle", "other_chicken", "other_dog", "other_horse", "other_goat", "other_cow", "other_cat", "other_frog", "other_sheep", "other_duck", "other_climb", "other_fly", "other_swim", "other_crawl", "other_game", "other_name", "other_cane", "other_lane", "other_case", "other_vase", "other_date", "other_gate"]
+          "wordIds": ["other_cake", "other_bake", "other_lake", "other_rake", "other_tape", "other_cave", "other_cape", "other_wave", "other_turtle", "other_chicken", "other_dog", "other_horse", "other_goat", "other_cow", "other_cat", "other_frog", "other_sheep", "other_duck", "other_climb", "other_fly", "other_swim", "other_crawl", "other_game", "other_name", "other_cane", "other_lane", "other_case", "other_vase", "other_date", "other_gate", "other_jump", "other_sleep", "other_run", "other_walk", "other_read", "other_eat"]
         } ,
         {
           "id": "phonics_review_1",

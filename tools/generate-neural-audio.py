@@ -20,9 +20,14 @@ import edge_tts
 
 VOICE = "en-US-JennyNeural"
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-WORDS_DIR = os.path.join(ROOT_DIR, "words-audio")
-PHONICS_DIR = os.path.join(ROOT_DIR, "phonics-audio")
-DATA_FILE = os.path.join(ROOT_DIR, "data.json")
+# 二代改成 Vite 專案結構：音檔搬到 public/（Vite 靜態資產目錄），data.json
+# 搬到 src/data/ 底下（見 規劃.md B 段、loadGameData.js）。一代這三個路徑是
+# 直接掛在專案根目錄，Phase 0 搬遷資產時把檔案內容複製過來了，但這三個路徑
+# 常數當時沒有同步更新——如果照舊路徑執行 `main()`，一開就會在讀
+# DATA_FILE 時 FileNotFoundError（新專案根目錄沒有 data.json）。
+WORDS_DIR = os.path.join(ROOT_DIR, "public", "words-audio")
+PHONICS_DIR = os.path.join(ROOT_DIR, "public", "phonics-audio")
+DATA_FILE = os.path.join(ROOT_DIR, "src", "data", "data.json")
 
 # 53 個 Phonics 音素的自然發音來源設定
 CHUNK_CONFIG = {
@@ -73,6 +78,7 @@ CHUNK_CONFIG = {
     "f": {"word": "fox", "start": 0.0, "end": 0.30},
     "g": {"word": "go", "start": 0.0, "end": 0.25},
     "h": {"word": "hat", "start": 0.0, "end": 0.25},
+    "j": {"word": "jam", "start": 0.0, "end": 0.28},
     "k": {"word": "kite", "start": 0.0, "end": 0.22},
     "l": {"word": "leg", "start": 0.0, "end": 0.30},
     "m": {"word": "man", "start": 0.0, "end": 0.35},
