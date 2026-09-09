@@ -116,7 +116,20 @@
     { "id": "other_run",        "word": "run",        "theme": "other", "emoji": "🏃", "zh": "跑",   "phonics": { "chunks": ["r", "u", "n"], "silent": [] } },
     { "id": "other_walk",       "word": "walk",       "theme": "other", "emoji": "🚶", "zh": "走路", "phonics": { "chunks": ["w", "a", "l", "k"], "silent": [2] } },
     { "id": "other_read",       "word": "read",       "theme": "other", "emoji": "📖", "zh": "閱讀", "phonics": { "chunks": ["r", "ea", "d"], "silent": [] } },
-    { "id": "other_eat",        "word": "eat",        "theme": "other", "emoji": "🍴", "zh": "吃",   "phonics": { "chunks": ["ea", "t"], "silent": [] } }
+    { "id": "other_eat",        "word": "eat",        "theme": "other", "emoji": "🍴", "zh": "吃",   "phonics": { "chunks": ["ea", "t"], "silent": [] } },
+    { "id": "other_line",       "word": "line",       "theme": "other", "emoji": "📏", "zh": "線條", "phonics": { "chunks": ["l", "i", "n", "e"], "silent": [3] } },
+    { "id": "other_pine",       "word": "pine",       "theme": "other", "emoji": "🌲", "zh": "松樹", "phonics": { "chunks": ["p", "i", "n", "e"], "silent": [3] } },
+    { "id": "other_bike",       "word": "bike",       "theme": "other", "emoji": "🚲", "zh": "腳踏車", "phonics": { "chunks": ["b", "i", "k", "e"], "silent": [3] } },
+    { "id": "other_time",       "word": "time",       "theme": "other", "emoji": "⏰", "zh": "時間", "phonics": { "chunks": ["t", "i", "m", "e"], "silent": [3] } },
+    { "id": "other_hike",       "word": "hike",       "theme": "other", "emoji": "🥾", "zh": "健行", "phonics": { "chunks": ["h", "i", "k", "e"], "silent": [3] } },
+    { "id": "other_lime",       "word": "lime",       "theme": "other", "emoji": "🍋‍🟩", "zh": "檸檬", "phonics": { "chunks": ["l", "i", "m", "e"], "silent": [3] } },
+    { "id": "other_coloring",   "word": "coloring",   "theme": "other", "emoji": "🖍️", "zh": "著色", "syllables": ["col", "or", "ing"], "phonics": { "chunks": ["c", "o", "l", "or", "i", "n", "g"], "silent": [] } },
+    { "id": "other_counting",   "word": "counting",   "theme": "other", "emoji": "🔢", "zh": "數數", "syllables": ["count", "ing"], "phonics": { "chunks": ["c", "ou", "n", "t", "i", "n", "g"], "silent": [] } },
+    { "id": "other_cutting",    "word": "cutting",    "theme": "other", "emoji": "✂️", "zh": "剪紙", "syllables": ["cut", "ting"], "phonics": { "chunks": ["c", "u", "t", "t", "i", "n", "g"], "silent": [] } },
+    { "id": "other_drawing",    "word": "drawing",    "theme": "other", "emoji": "🎨", "zh": "畫畫", "syllables": ["draw", "ing"], "phonics": { "chunks": ["d", "r", "aw", "i", "n", "g"], "silent": [] } },
+    { "id": "other_erasing",    "word": "erasing",    "theme": "other", "emoji": "🧹", "zh": "擦掉", "syllables": ["e", "ras", "ing"], "phonics": { "chunks": ["e", "r", "a", "s", "i", "n", "g"], "silent": [] } },
+    { "id": "other_talking",    "word": "talking",    "theme": "other", "emoji": "🗣️", "zh": "講話", "syllables": ["talk", "ing"], "phonics": { "chunks": ["t", "a", "l", "k", "i", "n", "g"], "silent": [2] } },
+    { "id": "other_gluing",     "word": "gluing",     "theme": "other", "emoji": "🧴", "zh": "黏貼", "syllables": ["glu", "ing"], "phonics": { "chunks": ["g", "l", "u", "i", "n", "g"], "silent": [] } }
   ],
   "themes": [
     { "id": "animals", "name": "動物",    "icon": "🐾",  "color": "#ffb703" },
@@ -138,7 +151,7 @@
           "id": "phonics_review_1",
           "label": "Phonics複習1",
           "distractorCount": 2,
-          "wordIds": ["other_cake", "other_bake", "other_lake", "other_rake", "other_tape", "other_cave", "other_cape", "other_wave",  "other_game", "other_name", "other_cane", "other_lane", "other_case", "other_vase", "other_date", "other_gate"]
+          "wordIds": ["other_cake", "other_bake", "other_lake", "other_rake", "other_tape", "other_cave", "other_cape", "other_wave", "other_game", "other_name", "other_cane", "other_lane", "other_case", "other_vase", "other_date", "other_gate", "number_nine", "other_line", "other_pine", "other_bike", "other_time", "other_hike", "other_lime", "other_coloring", "other_counting", "other_cutting", "other_drawing", "other_erasing", "other_talking", "other_gluing"]
         }
       ]
     }
