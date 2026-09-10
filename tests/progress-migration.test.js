@@ -39,7 +39,12 @@ describe('migrateV1ToV2', () => {
 
     expect(v2.schemaVersion).toBe(2);
     expect(v2.schemaVersion).toBe(SCHEMA_VERSION);
-    expect(v2.settings).toEqual({ hintMode: 'both', soundEnabled: true, speechRate: 0.8 });
+    expect(v2.settings).toEqual({
+      hintMode: 'both',
+      soundEnabled: true,
+      speechRate: 0.8,
+      tileSound: 'phonics',
+    });
     expect(v2.collectibles).toEqual({ animals_1: true });
 
     const lvl = v2.levels.animals_1;
@@ -71,10 +76,15 @@ describe('migrateV1ToV2', () => {
 
   it('settings 缺欄位時補一代預設值，已存在的欄位保留使用者原本設定', () => {
     const v1 = fullV1Fixture();
-    v1.settings = { soundEnabled: false }; // 只有這個欄位，其餘缺漏
+    v1.settings = { soundEnabled: false, tileSound: 'cat' }; // 只有這兩個欄位，其餘缺漏
 
     const v2 = migrateV1ToV2(v1);
-    expect(v2.settings).toEqual({ hintMode: 'both', soundEnabled: false, speechRate: 0.8 });
+    expect(v2.settings).toEqual({
+      hintMode: 'both',
+      soundEnabled: false,
+      speechRate: 0.8,
+      tileSound: 'cat',
+    });
   });
 
   it('settings/levels/collectibles 整個不存在時也不拋錯，補上合理預設', () => {
@@ -84,7 +94,12 @@ describe('migrateV1ToV2', () => {
     expect(v2.schemaVersion).toBe(2);
     expect(v2.levels).toEqual({});
     expect(v2.collectibles).toEqual({});
-    expect(v2.settings).toEqual({ hintMode: 'both', soundEnabled: true, speechRate: 0.8 });
+    expect(v2.settings).toEqual({
+      hintMode: 'both',
+      soundEnabled: true,
+      speechRate: 0.8,
+      tileSound: 'phonics',
+    });
   });
 
   it('保留 README 沒寫但一代 app.js 實際會寫入的根層級欄位（例如 lastPlayedAt），不當成未知欄位丟棄', () => {

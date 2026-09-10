@@ -29,6 +29,7 @@
  * @property {'image'|'audio'|'both'} hintMode - 對應一代 index.html 的三個提示模式按鈕
  * @property {boolean} soundEnabled
  * @property {number} speechRate
+ * @property {'phonics'|'letter'|'cat'} [tileSound] - 方塊音效模式：自然發音（預設）、字母名稱、貓咪叫聲
  */
 
 /**
@@ -66,11 +67,12 @@
 
 export const SCHEMA_VERSION = 2;
 
-/** 照抄一代 defaultProgress() 的預設值 */
+/** 照抄一代 defaultProgress() 的預設值，擴充 tileSound */
 export const DEFAULT_SETTINGS = Object.freeze({
   hintMode: 'both',
   soundEnabled: true,
   speechRate: 0.8,
+  tileSound: 'phonics',
 });
 
 /**

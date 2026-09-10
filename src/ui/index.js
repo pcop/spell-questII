@@ -76,6 +76,7 @@ import {
   leaveGame,
   onHintModeButtonsClick,
   onSoundToggleButtonsClick,
+  onTileSoundButtonsClick,
   onSpeechRateButtonsClick,
   onStickerModalBackdropClick,
   proceedFromCorrect,
@@ -174,6 +175,9 @@ export function bindStaticEvents() {
 
   const soundToggleButtons = $('sound-toggle-buttons');
   if (soundToggleButtons) soundToggleButtons.addEventListener('click', onSoundToggleButtonsClick);
+
+  const tileSoundButtons = $('tile-sound-buttons');
+  if (tileSoundButtons) tileSoundButtons.addEventListener('click', onTileSoundButtonsClick);
 
   const speechRateButtons = $('speech-rate-buttons');
   if (speechRateButtons) speechRateButtons.addEventListener('click', onSpeechRateButtonsClick);

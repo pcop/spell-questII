@@ -68,6 +68,21 @@ describe('Phase 1 整合 smoke test（主線流程）', () => {
     themeGrid.querySelector('.theme-card').click();
     expect(document.getElementById('view-level-select').hidden).toBe(false);
 
+    // 驗證方塊音效設定按鈕正常渲染且預設為 phonics
+    const tileSoundButtons = document.getElementById('tile-sound-buttons');
+    expect(tileSoundButtons).toBeTruthy();
+    const phonicsBtn = tileSoundButtons.querySelector('[data-tile-sound="phonics"]');
+    const letterBtn = tileSoundButtons.querySelector('[data-tile-sound="letter"]');
+    const catBtn = tileSoundButtons.querySelector('[data-tile-sound="cat"]');
+    expect(phonicsBtn.classList.contains('active')).toBe(true);
+
+    letterBtn.click();
+    expect(letterBtn.classList.contains('active')).toBe(true);
+    expect(phonicsBtn.classList.contains('active')).toBe(false);
+
+    catBtn.click();
+    expect(catBtn.classList.contains('active')).toBe(true);
+
     const levelGrid = document.getElementById('level-grid');
     const startBtn = levelGrid.querySelector('.level-start-btn:not(:disabled)');
     expect(startBtn, '至少要有一個可玩的關卡').toBeTruthy();

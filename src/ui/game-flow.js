@@ -58,7 +58,10 @@ import {
   playPopSound,
   playRandomCatSound,
   playCatSoundForLetter,
+  playTileSound,
+  setTileSoundMode,
   preloadCatAudio,
+  preloadLettersAudio,
   preloadEntryAudio,
 } from '../audio/index.js';
 
@@ -119,8 +122,10 @@ export async function initGameFlow() {
     const settings = getSettings();
     setSoundEnabled(settings.soundEnabled);
     setSpeechRate(settings.speechRate);
+    setTileSoundMode(settings.tileSound || 'phonics');
     initVoices();
     preloadCatAudio();
+    preloadLettersAudio();
     mascot.setMascotIdleMessages(messages.mascotIdle);
     mascot.initMascot();
     showView('splash');
@@ -307,6 +312,10 @@ export function renderHintModeButtons() {
   document.querySelectorAll('#sound-toggle-buttons .btn-toggle').forEach((b) => {
     b.classList.toggle('active', (b.dataset.soundEnabled === 'true') === settings.soundEnabled);
   });
+  const currentTileSound = settings.tileSound || 'phonics';
+  document.querySelectorAll('#tile-sound-buttons .btn-toggle').forEach((b) => {
+    b.classList.toggle('active', b.dataset.tileSound === currentTileSound);
+  });
   // 語速按鈕在「選難度」跟「字卡瀏覽」畫面共用同一個設定值，兩邊按鈕都一併
   // 同步高亮狀態（跟一代行為一致），`#flashcard-speech-rate-buttons` 屬於
   // Agent 5 的 view-flashcards，但這裡只是純 DOM class 切換，不依賴那支
@@ -337,6 +346,19 @@ export function onSoundToggleButtonsClick(e) {
   saveProgress(progress);
   setSoundEnabled(progress.settings.soundEnabled);
   renderHintModeButtons();
+}
+
+/** `#tile-sound-buttons` 容器點擊委派。 @param {MouseEvent} e @returns {void} */
+export function onTileSoundButtonsClick(e) {
+  const btn = e.target.closest('.btn-toggle');
+  if (!btn) return;
+  const progress = loadProgress();
+  progress.settings.tileSound = btn.dataset.tileSound;
+  saveProgress(progress);
+  setTileSoundMode(progress.settings.tileSound);
+  renderHintModeButtons();
+  // 立即試聽示範音（字母 A），讓使用者聽出模式差異
+  playTileSound('a', progress.settings.tileSound);
 }
 
 /** `#speech-rate-buttons` 容器點擊委派。 @param {MouseEvent} e @returns {void} */
@@ -642,7 +664,7 @@ function placeLetter(tileId) {
   const letter = tile ? tile.letter : '';
   const res = placeLetterInSlot(session, tileId);
   if (!res) return;
-  playCatSoundForLetter(letter);
+  playTileSound(letter);
   const view = getCurrentQuestionView(session);
   renderAnswerSlots(view);
   renderTiles(view);

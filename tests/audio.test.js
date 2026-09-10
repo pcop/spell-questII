@@ -233,6 +233,76 @@ describe('setSoundEnabled 影響合成音效', () => {
   });
 });
 
+describe('playTileSound 與 setTileSoundMode', () => {
+  it('預設為 phonics 模式，播放 /phonics-audio/<letter>.mp3', async () => {
+    installBrowserMocks();
+    const audio = await freshAudioModule();
+
+    expect(audio.getTileSoundMode()).toBe('phonics');
+    const res = audio.playTileSound('a');
+    expect(res).toBe('phonics');
+
+    const el = MockAudio.instances.find((a) => a.src === '/phonics-audio/a.mp3');
+    expect(el).toBeTruthy();
+  });
+
+  it('setTileSoundMode("letter") 切換為字母名稱模式，播放 /letters-audio/<letter>.mp3', async () => {
+    installBrowserMocks();
+    const audio = await freshAudioModule();
+
+    audio.setTileSoundMode('letter');
+    expect(audio.getTileSoundMode()).toBe('letter');
+    const res = audio.playTileSound('b');
+    expect(res).toBe('letter');
+
+    const el = MockAudio.instances.find((a) => a.src === '/letters-audio/b.mp3');
+    expect(el).toBeTruthy();
+  });
+
+  it('setTileSoundMode("cat") 切換為貓咪音效模式，播放 /cat-sfx/<catN>.mp3', async () => {
+    installBrowserMocks();
+    const audio = await freshAudioModule();
+
+    audio.setTileSoundMode('cat');
+    expect(audio.getTileSoundMode()).toBe('cat');
+    const res = audio.playTileSound('c');
+    expect(audio.CAT_SOUNDS).toContain(res);
+
+    const el = MockAudio.instances.find((a) => a.src === `/cat-sfx/${res}.mp3`);
+    expect(el).toBeTruthy();
+  });
+
+  it('playTileSound 支援傳入第二參數 mode 覆蓋當前預設', async () => {
+    installBrowserMocks();
+    const audio = await freshAudioModule();
+
+    audio.setTileSoundMode('phonics');
+    audio.playTileSound('d', 'letter');
+    const el = MockAudio.instances.find((a) => a.src === '/letters-audio/d.mp3');
+    expect(el).toBeTruthy();
+  });
+
+  it('setSoundEnabled(false) 靜音時 playTileSound 回傳 null 且不播放', async () => {
+    installBrowserMocks();
+    const audio = await freshAudioModule();
+
+    audio.setSoundEnabled(false);
+    expect(audio.playTileSound('a')).toBeNull();
+    expect(MockAudio.playCalls.length).toBe(0);
+  });
+
+  it('preloadLettersAudio 預載 26 個英文字母音檔', async () => {
+    installBrowserMocks();
+    const audio = await freshAudioModule();
+
+    audio.preloadLettersAudio();
+    'abcdefghijklmnopqrstuvwxyz'.split('').forEach((ch) => {
+      const el = MockAudio.instances.find((a) => a.src === `/letters-audio/${ch}.mp3`);
+      expect(el).toBeTruthy();
+    });
+  });
+});
+
 describe('setSpeechRate 影響之後的播放速度', () => {
   it('speakWord 使用 setSpeechRate 設定過的語速當作預設 playbackRate', async () => {
     installBrowserMocks();

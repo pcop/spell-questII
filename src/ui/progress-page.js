@@ -16,7 +16,7 @@ import { showToast } from './index.js';
 import { getValidLevelCombos, getThemes, getLevelDefsForTheme } from '../game/index.js';
 import { loadProgress, exportProgress, importProgress } from '../progress/store.js';
 import { levelKey } from '../progress/schema.js';
-import { setSpeechRate, setSoundEnabled } from '../audio/index.js';
+import { setSpeechRate, setSoundEnabled, setTileSoundMode } from '../audio/index.js';
 import { initThreeFx, celebrateLevelComplete } from '../three-fx/index.js';
 
 // 3D 特效可用性快取：
@@ -123,6 +123,7 @@ function handleImportedFile(file) {
       // 匯入新設定後要主動同步一次，不然要等下次手動切換或重新整理頁面才會套用。
       setSpeechRate(result.data.settings.speechRate);
       setSoundEnabled(result.data.settings.soundEnabled);
+      setTileSoundMode(result.data.settings.tileSound || 'phonics');
       renderProgressPage();
       showToast('進度已匯入！');
     } else {

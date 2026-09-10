@@ -27,9 +27,10 @@ ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # DATA_FILE 時 FileNotFoundError（新專案根目錄沒有 data.json）。
 WORDS_DIR = os.path.join(ROOT_DIR, "public", "words-audio")
 PHONICS_DIR = os.path.join(ROOT_DIR, "public", "phonics-audio")
+LETTERS_DIR = os.path.join(ROOT_DIR, "public", "letters-audio")
 DATA_FILE = os.path.join(ROOT_DIR, "src", "data", "data.json")
 
-# 53 個 Phonics 音素的自然發音來源設定
+# 54 個 Phonics 音素的自然發音來源設定
 CHUNK_CONFIG = {
     # 單字母短母音（以標準自然發音教學代表詞生成短母音）
     "a": {"word": "at", "start": 0.0, "end": 0.35},
@@ -84,6 +85,7 @@ CHUNK_CONFIG = {
     "m": {"word": "man", "start": 0.0, "end": 0.35},
     "n": {"word": "net", "start": 0.0, "end": 0.35},
     "p": {"word": "pen", "start": 0.0, "end": 0.22},
+    "q": {"word": "quick", "start": 0.0, "end": 0.28},
     "r": {"word": "red", "start": 0.0, "end": 0.30},
     "s": {"word": "sun", "start": 0.0, "end": 0.35},
     "t": {"word": "ten", "start": 0.0, "end": 0.22},
@@ -166,14 +168,42 @@ def process_word_audio(raw_mp3: str, out_mp3: str):
     subprocess.run(cmd, check=True)
 
 
-async def main():
-    os.makedirs(WORDS_DIR, exist_ok=True)
-    os.makedirs(PHONICS_DIR, exist_ok=True)
+def process_letter_audio(raw_mp3: str, out_mp3: str):
+    """字母名稱語音（A-Z）前後去除靜音並標準化音量"""
+    filters = [
+        "silenceremove=start_periods=1:start_duration=0.01:start_threshold=-50dB",
+        "silenceremove=stop_periods=1:stop_duration=0.1:stop_threshold=-45dB",
+        "loudnorm=I=-16:TP=-1.5:LRA=11"
+    ]
+    cmd = [
+        "ffmpeg", "-y", "-loglevel", "error",
+        "-i", raw_mp3,
+        "-af", ",".join(filters),
+        "-codec:a", "libmp3lame", "-qscale:a", "2",
+        out_mp3
+    ]
+    subprocess.run(cmd, check=True)
 
+
+def check_mean_volume(mp3_path: str) -> float:
+    """使用 ffmpeg volumedetect 檢查 mean_volume (dB)"""
+    cmd = ["ffmpeg", "-i", mp3_path, "-af", "volumedetect", "-f", "null", "-"]
+    res = subprocess.run(cmd, capture_output=True, text=True)
+    for line in res.stderr.splitlines():
+        if "mean_volume:" in line:
+            try:
+                val = float(line.split("mean_volume:")[1].replace("dB", "").strip())
+                return val
+            except Exception:
+                pass
+    return 0.0
+
+
+async def generate_words_audio():
+    os.makedirs(WORDS_DIR, exist_ok=True)
     with open(DATA_FILE, "r", encoding="utf-8") as f:
         data = json.load(f)
 
-    # 1. 產生所有單字音檔
     words = sorted(list(set(entry["word"].strip().lower() for entry in data["wordBank"])))
     print(f"🎙️ 開始產生 {len(words)} 個單字音檔 (words-audio/)...")
 
@@ -184,24 +214,69 @@ async def main():
             try:
                 await generate_tts(word, raw_tmp, rate="-20%")
                 process_word_audio(raw_tmp, out_file)
-                print(f"  [{idx}/{len(words)}] ✅ {word}.mp3")
+                vol = check_mean_volume(out_file)
+                if vol <= -90.0:
+                    print(f"  [{idx}/{len(words)}] ⚠️ {word}.mp3 疑似靜音 ({vol} dB)")
+                else:
+                    print(f"  [{idx}/{len(words)}] ✅ {word}.mp3 ({vol} dB)")
             except Exception as e:
                 print(f"  [{idx}/{len(words)}] ❌ {word}.mp3 錯誤: {e}")
 
-    # 2. 產生 53 個 Phonics 音素音檔
-    print(f"\n🎧 開始產生 {len(CHUNK_CONFIG)} 個自然拼讀音素 (phonics-audio/)...")
+
+async def generate_phonics_audio(target_chunks=None):
+    os.makedirs(PHONICS_DIR, exist_ok=True)
+    chunks_to_gen = {k: v for k, v in CHUNK_CONFIG.items() if (target_chunks is None or k in target_chunks)}
+    print(f"\n🎧 開始產生 {len(chunks_to_gen)} 個自然拼讀音素 (phonics-audio/)...")
     with tempfile.TemporaryDirectory() as tmpdir:
-        for idx, (chunk, cfg) in enumerate(CHUNK_CONFIG.items(), 1):
+        for idx, (chunk, cfg) in enumerate(chunks_to_gen.items(), 1):
             raw_tmp = os.path.join(tmpdir, f"chunk_{chunk}_raw.mp3")
             out_file = os.path.join(PHONICS_DIR, f"{chunk}.mp3")
             try:
                 await generate_tts(cfg["word"], raw_tmp, rate="-20%")
                 process_audio(raw_tmp, out_file, start=cfg["start"], end=cfg["end"])
-                print(f"  [{idx}/{len(CHUNK_CONFIG)}] ✅ {chunk}.mp3 (源自: {cfg['word']})")
+                vol = check_mean_volume(out_file)
+                if vol <= -90.0:
+                    print(f"  [{idx}/{len(chunks_to_gen)}] ⚠️ {chunk}.mp3 疑似靜音 ({vol} dB)")
+                else:
+                    print(f"  [{idx}/{len(chunks_to_gen)}] ✅ {chunk}.mp3 (源自: {cfg['word']}, {vol} dB)")
             except Exception as e:
-                print(f"  [{idx}/{len(CHUNK_CONFIG)}] ❌ {chunk}.mp3 錯誤: {e}")
+                print(f"  [{idx}/{len(chunks_to_gen)}] ❌ {chunk}.mp3 錯誤: {e}")
 
-    print("\n🎉 全部神經網路真人音檔生成完成！")
+
+async def generate_letters_audio():
+    os.makedirs(LETTERS_DIR, exist_ok=True)
+    letters = [chr(c) for c in range(ord('a'), ord('z') + 1)]
+    print(f"\n🔤 開始產生 26 個英文字母發音 (letters-audio/)...")
+    with tempfile.TemporaryDirectory() as tmpdir:
+        for idx, ch in enumerate(letters, 1):
+            raw_tmp = os.path.join(tmpdir, f"letter_{ch}_raw.mp3")
+            out_file = os.path.join(LETTERS_DIR, f"{ch}.mp3")
+            try:
+                # 傳大寫給 Edge-TTS 朗讀標準字母名稱 (Letter Name)
+                await generate_tts(ch.upper(), raw_tmp, rate="-5%")
+                process_letter_audio(raw_tmp, out_file)
+                vol = check_mean_volume(out_file)
+                if vol <= -90.0:
+                    print(f"  [{idx}/{len(letters)}] ⚠️ {ch}.mp3 疑似靜音 ({vol} dB)")
+                else:
+                    print(f"  [{idx}/{len(letters)}] ✅ {ch}.mp3 ({vol} dB)")
+            except Exception as e:
+                print(f"  [{idx}/{len(letters)}] ❌ {ch}.mp3 錯誤: {e}")
+
+
+async def main():
+    args = sys.argv[1:]
+    run_all = len(args) == 0 or "--all" in args
+    if run_all or "--letters" in args:
+        await generate_letters_audio()
+    if run_all or "--phonics" in args:
+        # 如果只傳 --phonics-missing 或特定 chunk，可彈性生成
+        target = ["q"] if "--phonics-q" in args else None
+        await generate_phonics_audio(target_chunks=target)
+    if run_all or "--words" in args:
+        await generate_words_audio()
+
+    print("\n🎉 音檔處理完成！")
 
 
 if __name__ == "__main__":

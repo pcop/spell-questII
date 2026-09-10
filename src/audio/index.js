@@ -29,6 +29,7 @@ let cachedEnglishVoice = null;
 // setSoundEnabled/setSpeechRate 把這裡的狀態同步成使用者的實際設定。
 let soundEnabled = true;
 let speechRate = 0.8;
+let tileSoundMode = 'phonics';
 
 let wordAudioEl = null;
 let phonicsAudioEl = null;
@@ -85,6 +86,21 @@ function wordAudioUrl(word) {
 
 function phonicsAudioUrl(chunkName) {
   return BASE_URL + 'phonics-audio/' + encodeURIComponent(chunkName) + '.mp3';
+}
+
+export function lettersAudioUrl(letter) {
+  return BASE_URL + 'letters-audio/' + encodeURIComponent(letter.toLowerCase()) + '.mp3';
+}
+
+/**
+ * 預載 26 個英文字母名稱發音檔案（a ~ z）。
+ * @returns {void}
+ */
+export function preloadLettersAudio() {
+  if (!hasAudioCtor()) return;
+  for (let i = 97; i <= 122; i++) {
+    preloadAudio(lettersAudioUrl(String.fromCharCode(i)));
+  }
 }
 
 /** 支援的可愛小貓叫聲清單（5 種不同特色的萌貓短叫聲） */
@@ -619,7 +635,7 @@ export function playRandomCatSound(letter) {
 export const playRandomAnimalSound = playRandomCatSound;
 
 /**
- * 音效開關（不影響語音朗讀，只影響上面三個合成音效函式）。
+ * 音效開關（不影響語音朗讀，只影響合成音效與方塊音效）。
  * @param {boolean} enabled
  * @returns {void}
  */
@@ -635,3 +651,85 @@ export function setSoundEnabled(enabled) {
 export function setSpeechRate(rate) {
   if (typeof rate === 'number' && !Number.isNaN(rate)) speechRate = rate;
 }
+
+/**
+ * 取得當前方塊音效模式（'phonics' | 'letter' | 'cat'）。
+ * @returns {'phonics'|'letter'|'cat'}
+ */
+export function getTileSoundMode() {
+  return tileSoundMode;
+}
+
+/**
+ * 設定方塊音效模式（'phonics' | 'letter' | 'cat'）。
+ * @param {'phonics'|'letter'|'cat'} mode
+ * @returns {void}
+ */
+export function setTileSoundMode(mode) {
+  if (mode === 'phonics' || mode === 'letter' || mode === 'cat') {
+    tileSoundMode = mode;
+  }
+}
+
+function fallbackLetterToTTS(letter, mode) {
+  if (!hasSpeechSynthesis() || !hasSpeechUtteranceCtor()) return;
+  try {
+    speechSynthesis.cancel();
+    const text = mode === 'letter' ? letter.toUpperCase() : letter.toLowerCase();
+    const utter = new SpeechSynthesisUtterance(text);
+    if (cachedEnglishVoice) {
+      utter.voice = cachedEnglishVoice;
+      utter.lang = cachedEnglishVoice.lang;
+    }
+    utter.rate = speechRate;
+    speechSynthesis.speak(utter);
+  } catch (err) {
+    // 忽略
+  }
+}
+
+/**
+ * 播放指定字母的方塊音效。
+ * 支援三種模式：'phonics'（自然發音，預設）、'letter'（字母名稱）、'cat'（可愛小貓叫聲）。
+ * 具備快速打斷前一聲（單音軌俐落切換）、音效開關（setSoundEnabled）檢查，以及失敗時降級至 TTS。
+ * @param {string} letter 點擊或填入的字母（如 'a', 'b', 'c' 等）
+ * @param {'phonics'|'letter'|'cat'} [mode] 可選，未傳則使用目前設定的 tileSoundMode
+ * @returns {string|null} 回傳播放的音效識別值（cat1~cat5 或 mode 名稱），未播放或靜音時回傳 null
+ */
+export function playTileSound(letter, mode = tileSoundMode) {
+  if (!soundEnabled) return null;
+  if (!letter || typeof letter !== 'string') return null;
+  const char = letter.trim().toLowerCase()[0];
+  if (!char) return null;
+
+  const currentMode = mode === 'cat' || mode === 'letter' || mode === 'phonics' ? mode : tileSoundMode;
+
+  if (currentMode === 'cat') {
+    return playCatSoundForLetter(char);
+  }
+
+  const el = getAnimalAudioEl();
+  const fallback = () => fallbackLetterToTTS(char, currentMode);
+  if (!el) {
+    fallback();
+    return currentMode;
+  }
+
+  const url = currentMode === 'letter' ? lettersAudioUrl(char) : phonicsAudioUrl(char);
+
+  try {
+    el.pause();
+    el.currentTime = 0;
+    el.onended = null;
+    el.onerror = fallback;
+    el.src = url;
+    const p = el.play();
+    if (p && typeof p.catch === 'function') {
+      p.catch(fallback);
+    }
+  } catch (err) {
+    fallback();
+  }
+  return currentMode;
+}
+

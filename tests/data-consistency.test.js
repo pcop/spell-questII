@@ -150,3 +150,17 @@ describe('data-consistency: cat-sfx 音檔必須存在且非空', () => {
   });
 });
 
+describe('data-consistency: letters-audio 音檔必須存在且非空', () => {
+  it('public/letters-audio/ 下的 a.mp3 ~ z.mp3 均存在且大小大於 0', () => {
+    const lettersAudioDir = path.join(__dirname, '../public/letters-audio');
+    const letters = 'abcdefghijklmnopqrstuvwxyz'.split('');
+    letters.forEach((ch) => {
+      const p = path.join(lettersAudioDir, `${ch}.mp3`);
+      expect(fs.existsSync(p), `缺少 ${ch}.mp3`).toBe(true);
+      const stat = fs.statSync(p);
+      expect(stat.size, `${ch}.mp3 檔案大小為 0`).toBeGreaterThan(100);
+    });
+  });
+});
+
+
