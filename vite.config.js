@@ -50,10 +50,10 @@ export default defineConfig(({ command }) => ({
       workbox: {
         maximumFileSizeToCacheInBytes: 3000000,
         globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
-        globIgnores: ['**/words-audio/**', '**/phonics-audio/**', '**/mascot-images/**'],
+        globIgnores: ['**/words-audio/**', '**/phonics-audio/**', '**/cat-sfx/**', '**/mascot-images/**'],
         runtimeCaching: [
           {
-            urlPattern: /\/(words-audio|phonics-audio)\/.*\.mp3$/,
+            urlPattern: /\/(words-audio|phonics-audio|cat-sfx)\/.*\.mp3$/,
             handler: 'CacheFirst',
             options: {
               cacheName: 'game-audio-cache',

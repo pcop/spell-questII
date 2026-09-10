@@ -87,23 +87,77 @@ function phonicsAudioUrl(chunkName) {
   return BASE_URL + 'phonics-audio/' + encodeURIComponent(chunkName) + '.mp3';
 }
 
-/** 支援的可愛動物叫聲清單 */
-export const ANIMAL_SOUNDS = ['cat', 'dog', 'bird', 'sheep', 'duck'];
+/** 支援的可愛小貓叫聲清單（5 種不同特色的萌貓短叫聲） */
+export const CAT_SOUNDS = ['cat1', 'cat2', 'cat3', 'cat4', 'cat5'];
+/** 向後相容別名 */
+export const ANIMAL_SOUNDS = CAT_SOUNDS;
 
-function animalAudioUrl(animalName) {
-  return BASE_URL + 'animal-sfx/' + encodeURIComponent(animalName) + '.mp3';
+/**
+ * 26 個英文字母固定配置對應的可愛小貓叫聲表。
+ * 相同的字母固定配置相同音效，並兼顧相鄰不同字母在常用單字中的音色旋律層次。
+ */
+export const LETTER_CAT_SOUND_MAP = {
+  a: 'cat1',
+  b: 'cat2',
+  c: 'cat3',
+  d: 'cat2',
+  e: 'cat2',
+  f: 'cat4',
+  g: 'cat1',
+  h: 'cat4',
+  i: 'cat3',
+  j: 'cat4',
+  k: 'cat4',
+  l: 'cat5',
+  m: 'cat5',
+  n: 'cat5',
+  o: 'cat4',
+  p: 'cat4',
+  q: 'cat3',
+  r: 'cat5',
+  s: 'cat1',
+  t: 'cat2',
+  u: 'cat5',
+  v: 'cat3',
+  w: 'cat5',
+  x: 'cat3',
+  y: 'cat5',
+  z: 'cat4',
+};
+
+/**
+ * 依字母取得固定配置的可愛小貓叫聲音效名稱（cat1 ~ cat5）。
+ * 相同字母（不區分大小寫）永遠對應至同一款固定配置的貓咪叫聲。
+ * @param {string} letter
+ * @returns {string} 'cat1' ~ 'cat5'
+ */
+export function getCatSoundForLetter(letter) {
+  if (!letter || typeof letter !== 'string') return CAT_SOUNDS[0];
+  const char = letter.trim().toLowerCase()[0];
+  if (!char) return CAT_SOUNDS[0];
+  if (LETTER_CAT_SOUND_MAP[char]) {
+    return LETTER_CAT_SOUND_MAP[char];
+  }
+  const code = char.charCodeAt(0);
+  return CAT_SOUNDS[code % CAT_SOUNDS.length];
+}
+
+function catAudioUrl(catName) {
+  return BASE_URL + 'cat-sfx/' + encodeURIComponent(catName) + '.mp3';
 }
 
 /**
- * 預載所有可愛動物叫聲檔案（cat, dog, bird, sheep, duck）。
+ * 預載所有可愛小貓叫聲檔案（cat1 ~ cat5）。
  * @returns {void}
  */
-export function preloadAnimalAudio() {
+export function preloadCatAudio() {
   if (!hasAudioCtor()) return;
-  ANIMAL_SOUNDS.forEach((name) => {
-    preloadAudio(animalAudioUrl(name));
+  CAT_SOUNDS.forEach((name) => {
+    preloadAudio(catAudioUrl(name));
   });
 }
+/** 向後相容別名 */
+export const preloadAnimalAudio = preloadCatAudio;
 
 function preloadAudio(url) {
   if (!url || preloadedAudioMap[url] || !hasAudioCtor()) return;
@@ -502,26 +556,23 @@ export function playPopSound() {
 }
 
 /**
- * 隨機播放一種可愛動物叫聲（小貓、小狗、小鳥、小羊、小鴨）。
- * 具備快速打斷前一聲（單音軌俐落切換）與 setSoundEnabled 檢查。
- * @returns {string|null} 回傳播放的動物名稱，未播放或靜音時回傳 null
+ * 播放指定字母固定配置的可愛小貓叫聲。
+ * 相同字母固定配置相同音效；具備快速打斷前一聲（單音軌俐落切換）與 setSoundEnabled 檢查。
+ * @param {string} [letter] 點擊或填入的字母（如 'a', 'b', 'c' 等）
+ * @returns {string|null} 回傳播放的小貓音效名稱（cat1~cat5），未播放或靜音時回傳 null
  */
-export function playRandomAnimalSound() {
+export function playCatSoundForLetter(letter) {
   if (!soundEnabled) return null;
   const el = getAnimalAudioEl();
   if (!el) return null;
 
-  let nextIdx = Math.floor(Math.random() * ANIMAL_SOUNDS.length);
-  if (ANIMAL_SOUNDS.length > 1 && nextIdx === lastAnimalIndex) {
-    nextIdx = (nextIdx + 1 + Math.floor(Math.random() * (ANIMAL_SOUNDS.length - 1))) % ANIMAL_SOUNDS.length;
-  }
-  lastAnimalIndex = nextIdx;
-  const chosen = ANIMAL_SOUNDS[nextIdx];
+  if (!letter) return playRandomCatSound();
+  const chosen = getCatSoundForLetter(letter);
 
   try {
     el.pause();
     el.currentTime = 0;
-    el.src = animalAudioUrl(chosen);
+    el.src = catAudioUrl(chosen);
     const p = el.play();
     if (p && typeof p.catch === 'function') {
       p.catch(() => {});
@@ -531,6 +582,41 @@ export function playRandomAnimalSound() {
   }
   return chosen;
 }
+
+/**
+ * 隨機播放一種可愛小貓叫聲（5 款不同特質的超萌小貓短叫聲）。若傳入 letter 則播放該字母固定配置音效。
+ * 具備快速打斷前一聲（單音軌俐落切換）與 setSoundEnabled 檢查。
+ * @param {string} [letter]
+ * @returns {string|null} 回傳播放的小貓音效名稱（cat1~cat5），未播放或靜音時回傳 null
+ */
+export function playRandomCatSound(letter) {
+  if (letter) return playCatSoundForLetter(letter);
+  if (!soundEnabled) return null;
+  const el = getAnimalAudioEl();
+  if (!el) return null;
+
+  let nextIdx = Math.floor(Math.random() * CAT_SOUNDS.length);
+  if (CAT_SOUNDS.length > 1 && nextIdx === lastAnimalIndex) {
+    nextIdx = (nextIdx + 1 + Math.floor(Math.random() * (CAT_SOUNDS.length - 1))) % CAT_SOUNDS.length;
+  }
+  lastAnimalIndex = nextIdx;
+  const chosen = CAT_SOUNDS[nextIdx];
+
+  try {
+    el.pause();
+    el.currentTime = 0;
+    el.src = catAudioUrl(chosen);
+    const p = el.play();
+    if (p && typeof p.catch === 'function') {
+      p.catch(() => {});
+    }
+  } catch (err) {
+    // 忽略音訊播放異常
+  }
+  return chosen;
+}
+/** 向後相容別名 */
+export const playRandomAnimalSound = playRandomCatSound;
 
 /**
  * 音效開關（不影響語音朗讀，只影響上面三個合成音效函式）。

@@ -137,12 +137,12 @@ describe('data-consistency: 每個 phonics chunk 都應該有對應的 phonics-a
   });
 });
 
-describe('data-consistency: animal-sfx 音檔必須存在且非空', () => {
-  it('public/animal-sfx/ 下的 cat/dog/bird/sheep/duck.mp3 均存在且大小大於 0', () => {
-    const animalSfxDir = path.join(__dirname, '../public/animal-sfx');
-    const animals = ['cat', 'dog', 'bird', 'sheep', 'duck'];
-    animals.forEach((name) => {
-      const p = path.join(animalSfxDir, `${name}.mp3`);
+describe('data-consistency: cat-sfx 音檔必須存在且非空', () => {
+  it('public/cat-sfx/ 下的 cat1.mp3 ~ cat5.mp3 均存在且大小大於 0', () => {
+    const catSfxDir = path.join(__dirname, '../public/cat-sfx');
+    const cats = ['cat1', 'cat2', 'cat3', 'cat4', 'cat5'];
+    cats.forEach((name) => {
+      const p = path.join(catSfxDir, `${name}.mp3`);
       expect(fs.existsSync(p), `缺少 ${name}.mp3`).toBe(true);
       const stat = fs.statSync(p);
       expect(stat.size, `${name}.mp3 檔案大小為 0`).toBeGreaterThan(100);

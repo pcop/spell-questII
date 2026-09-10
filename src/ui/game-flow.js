@@ -56,8 +56,9 @@ import {
   playWrongSound,
   playStarPopSound,
   playPopSound,
-  playRandomAnimalSound,
-  preloadAnimalAudio,
+  playRandomCatSound,
+  playCatSoundForLetter,
+  preloadCatAudio,
   preloadEntryAudio,
 } from '../audio/index.js';
 
@@ -119,7 +120,7 @@ export async function initGameFlow() {
     setSoundEnabled(settings.soundEnabled);
     setSpeechRate(settings.speechRate);
     initVoices();
-    preloadAnimalAudio();
+    preloadCatAudio();
     mascot.setMascotIdleMessages(messages.mascotIdle);
     mascot.initMascot();
     showView('splash');
@@ -637,9 +638,11 @@ function bindTileInteraction(btn, tileId) {
 
 function placeLetter(tileId) {
   if (!session) return;
+  const tile = session.tiles.find((t) => t.tileId === tileId);
+  const letter = tile ? tile.letter : '';
   const res = placeLetterInSlot(session, tileId);
   if (!res) return;
-  playRandomAnimalSound();
+  playCatSoundForLetter(letter);
   const view = getCurrentQuestionView(session);
   renderAnswerSlots(view);
   renderTiles(view);
