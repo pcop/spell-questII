@@ -615,29 +615,159 @@ body {
 .tile-area {
   display: flex;
   justify-content: center;
-  gap: 10px;
+  gap: 12px;
   flex-wrap: wrap;
-  min-height: 68px;
+  min-height: 80px;
+  padding-top: 16px; /* 預留怪獸耳朵與角角的微探頭空間 */
 }
+
+/* 字母小怪獸方塊本體 */
 .letter-tile {
+  position: relative;
   width: 54px;
-  height: 62px;
+  height: 64px;
   border-radius: var(--radius-sm);
-  border: 2px solid var(--color-border);
-  background: linear-gradient(180deg, #ffffff, var(--color-panel-alt));
-  box-shadow: 0 5px 0 var(--color-border);
-  font-family: var(--font-heading);
-  font-size: 27px;
-  font-weight: 800;
-  color: var(--color-text);
-  text-transform: uppercase;
+  border: 3px solid var(--color-border);
+  box-shadow: 0 6px 0 var(--color-border);
   cursor: grab;
-  transition: transform 0.12s ease, opacity 0.15s ease;
   touch-action: none;
+  overflow: visible;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 0 0 6px;
+  background: var(--color-panel);
+  transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.15s ease, opacity 0.2s ease, filter 0.15s ease;
 }
-.letter-tile:active { transform: translateY(3px); }
-.letter-tile.used { opacity: 0; pointer-events: none; }
-.letter-tile.dragging { cursor: grabbing; z-index: 20; box-shadow: 0 10px 18px rgba(0, 0, 0, 0.35); }
+
+/* 頂部高光光澤，營造玩具積木立體質感 */
+.letter-tile::before {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 6px;
+  right: 6px;
+  height: 5px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.45);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* 5 款糖果色小怪獸造型底色與 3D 厚立體底 */
+.letter-tile.monster-skin-0 {
+  background: linear-gradient(180deg, #ff80ab 0%, #f0437a 100%);
+  box-shadow: 0 6px 0 #9c1543, 0 8px 12px rgba(240, 67, 122, 0.35);
+}
+.letter-tile.monster-skin-1 {
+  background: linear-gradient(180deg, #38bdf8 0%, #0284c7 100%);
+  box-shadow: 0 6px 0 #03537d, 0 8px 12px rgba(2, 132, 199, 0.35);
+}
+.letter-tile.monster-skin-2 {
+  background: linear-gradient(180deg, #34d399 0%, #059669 100%);
+  box-shadow: 0 6px 0 #045a3f, 0 8px 12px rgba(5, 150, 105, 0.35);
+}
+.letter-tile.monster-skin-3 {
+  background: linear-gradient(180deg, #fbbf24 0%, #ea580c 100%);
+  box-shadow: 0 6px 0 #8a2a07, 0 8px 12px rgba(234, 88, 12, 0.35);
+}
+.letter-tile.monster-skin-4 {
+  background: linear-gradient(180deg, #a855f7 0%, #7e22ce 100%);
+  box-shadow: 0 6px 0 #4c137a, 0 8px 12px rgba(126, 34, 206, 0.35);
+}
+
+/* 萌怪頭部裝飾與微探頭耳朵/小角 */
+.letter-tile .monster-decor {
+  position: absolute;
+  top: -15px;
+  left: -3px;
+  width: 54px;
+  height: 38px;
+  pointer-events: none;
+  z-index: 3;
+}
+.letter-tile .monster-decor-svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  display: block;
+}
+
+/* 眼睛眨眼關鍵影格動畫 */
+@keyframes monster-blink {
+  0%, 90%, 100% { transform: scaleY(1); }
+  95% { transform: scaleY(0.08); }
+}
+
+.letter-tile .monster-eye {
+  transform-origin: center;
+  animation: monster-blink 3.8s infinite ease-in-out;
+}
+.letter-tile:nth-child(2n) .monster-eye { animation-delay: 0.9s; }
+.letter-tile:nth-child(3n) .monster-eye { animation-delay: 1.8s; }
+.letter-tile:nth-child(4n) .monster-eye { animation-delay: 2.7s; }
+
+/* 字母文字：大膽粗體、高對比漫畫描邊與陰影 */
+.letter-tile .tile-letter {
+  position: relative;
+  z-index: 2;
+  font-family: var(--font-heading);
+  font-size: 26px;
+  font-weight: 800;
+  color: #ffffff;
+  text-transform: uppercase;
+  line-height: 1;
+  pointer-events: none;
+  user-select: none;
+  text-shadow:
+    -1.5px -1.5px 0 var(--color-border),
+     1.5px -1.5px 0 var(--color-border),
+    -1.5px  1.5px 0 var(--color-border),
+     1.5px  1.5px 0 var(--color-border),
+     0 3.5px 0 var(--color-border);
+  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.25));
+}
+
+/* 按下 Q 彈果凍縮放（Squash & Stretch） */
+.letter-tile:active {
+  transform: translateY(4px) scale(0.95, 0.9);
+  box-shadow: 0 2px 0 var(--color-border);
+}
+
+@media (hover: hover) {
+  .letter-tile:not(:disabled):not(.used):hover {
+    filter: brightness(1.08);
+    transform: translateY(-3px) scale(1.04);
+  }
+}
+
+/* 拖曳中：拎起來的懸空微傾斜與柔和陰影 */
+.letter-tile.dragging {
+  cursor: grabbing;
+  z-index: 30;
+  transform: scale(1.14) rotate(-3.5deg);
+  box-shadow: 0 16px 26px rgba(10, 5, 30, 0.4);
+}
+.letter-tile.dragging .monster-eye {
+  transform: scale(1.2);
+}
+
+/* 使用後：彈跳淡出消失 */
+.letter-tile.used {
+  opacity: 0;
+  pointer-events: none;
+  transform: scale(0.2) rotate(18deg);
+  transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.18s ease;
+}
+
+/* 上方答案槽位呼應配色 */
+.answer-slot.filled.monster-skin-0 { background: #ffe4ee; border-color: #f0437a; }
+.answer-slot.filled.monster-skin-1 { background: #e0f2fe; border-color: #0284c7; }
+.answer-slot.filled.monster-skin-2 { background: #d1fae5; border-color: #059669; }
+.answer-slot.filled.monster-skin-3 { background: #fef3c7; border-color: #ea580c; }
+.answer-slot.filled.monster-skin-4 { background: #f3e8ff; border-color: #7e22ce; }
+
 
 .feedback-message {
   text-align: center;
@@ -936,7 +1066,9 @@ body {
 @media (max-width: 600px) {
   body { padding: 18px 10px 60px; }
   .panel { padding: 18px; }
-  .letter-tile, .answer-slot { width: 46px; height: 54px; font-size: 22px; }
+  .letter-tile, .answer-slot { width: 46px; height: 56px; font-size: 22px; }
+  .letter-tile .tile-letter { font-size: 21px; margin-top: 10px; }
+  .letter-tile .monster-decor { top: -13px; left: -2px; width: 46px; height: 32px; }
   .prompt-visual { font-size: 64px; min-height: 80px; }
   .flashcard-visual { font-size: 72px; min-height: 90px; }
   .flashcard-word { font-size: 30px; }

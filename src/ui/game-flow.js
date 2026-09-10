@@ -55,6 +55,7 @@ import {
   playCorrectSound,
   playWrongSound,
   playStarPopSound,
+  playPopSound,
   preloadEntryAudio,
 } from '../audio/index.js';
 
@@ -435,6 +436,96 @@ function expandGroupSizes(sizes) {
   return { groupIndex, breaks };
 }
 
+/**
+ * 依字母計算對應的小怪獸造型索引（0–4）。
+ * @param {string} letter
+ * @returns {number}
+ */
+export function getMonsterSkinIndex(letter) {
+  if (!letter) return 0;
+  const code = letter.toLowerCase().charCodeAt(0);
+  return (code - 97 >= 0 ? code - 97 : 0) % 5;
+}
+
+// 5 款萌怪頭頂裝飾（微探出上緣的耳朵/小角/天線）與表情 SVG（不包含任何 <text>，純幾何圖案確保 textContent 一致）
+const MONSTER_DECOR_SVGS = [
+  // 0: 粉紅萌兔怪 (雙大圓眼、水汪汪高光、長圓耳朵)
+  `<svg viewBox="0 0 54 38" width="54" height="38" class="monster-decor-svg">
+    <ellipse cx="14" cy="11" rx="5.5" ry="9" fill="#ff7ba7" stroke="#2a1a55" stroke-width="2.5" transform="rotate(-12 14 11)" />
+    <ellipse cx="14" cy="12" rx="2.5" ry="5.5" fill="#ffb3cb" transform="rotate(-12 14 11)" />
+    <ellipse cx="40" cy="11" rx="5.5" ry="9" fill="#ff7ba7" stroke="#2a1a55" stroke-width="2.5" transform="rotate(12 40 11)" />
+    <ellipse cx="40" cy="12" rx="2.5" ry="5.5" fill="#ffb3cb" transform="rotate(12 40 11)" />
+    <circle class="monster-eye" cx="17" cy="24" r="5.2" fill="#ffffff" stroke="#2a1a55" stroke-width="1.8" />
+    <circle class="monster-pupil" cx="17" cy="24" r="2.8" fill="#2a1a55" />
+    <circle cx="16" cy="22.5" r="1.2" fill="#ffffff" />
+    <circle cx="18" cy="25.2" r="0.6" fill="#ffffff" />
+    <circle class="monster-eye" cx="37" cy="24" r="5.2" fill="#ffffff" stroke="#2a1a55" stroke-width="1.8" />
+    <circle class="monster-pupil" cx="37" cy="24" r="2.8" fill="#2a1a55" />
+    <circle cx="36" cy="22.5" r="1.2" fill="#ffffff" />
+    <circle cx="38" cy="25.2" r="0.6" fill="#ffffff" />
+    <ellipse cx="11" cy="28" rx="2.5" ry="1.4" fill="#ff2e75" opacity="0.65" />
+    <ellipse cx="43" cy="28" rx="2.5" ry="1.4" fill="#ff2e75" opacity="0.65" />
+  </svg>`,
+
+  // 1: 天藍單眼天線怪 (正中大圓眼珠、頭頂燈泡天線)
+  `<svg viewBox="0 0 54 38" width="54" height="38" class="monster-decor-svg">
+    <path d="M 27 15 Q 25 8 27 4" stroke="#2a1a55" stroke-width="2.5" fill="none" stroke-linecap="round" />
+    <circle cx="27" cy="4" r="4" fill="#fde047" stroke="#2a1a55" stroke-width="2" />
+    <circle cx="26" cy="3" r="1" fill="#ffffff" />
+    <circle class="monster-eye" cx="27" cy="24" r="7.5" fill="#ffffff" stroke="#2a1a55" stroke-width="2" />
+    <circle class="monster-pupil" cx="27" cy="24" r="4.2" fill="#0284c7" />
+    <circle cx="27" cy="24" r="2.5" fill="#2a1a55" />
+    <circle cx="25.5" cy="22" r="1.6" fill="#ffffff" />
+    <circle cx="28.5" cy="25.5" r="0.8" fill="#ffffff" />
+    <ellipse cx="14" cy="28" rx="2.5" ry="1.4" fill="#0284c7" opacity="0.4" />
+    <ellipse cx="40" cy="28" rx="2.5" ry="1.4" fill="#0284c7" opacity="0.4" />
+  </svg>`,
+
+  // 2: 草綠雙角小恐龍怪 (兩側黃色小角、活潑萌眼)
+  `<svg viewBox="0 0 54 38" width="54" height="38" class="monster-decor-svg">
+    <polygon points="13,15 17,5 21,15" fill="#facc15" stroke="#2a1a55" stroke-width="2" stroke-linejoin="round" />
+    <polygon points="33,15 37,5 41,15" fill="#facc15" stroke="#2a1a55" stroke-width="2" stroke-linejoin="round" />
+    <circle class="monster-eye" cx="18" cy="24" r="5" fill="#ffffff" stroke="#2a1a55" stroke-width="1.8" />
+    <circle class="monster-pupil" cx="18" cy="24" r="2.6" fill="#047857" />
+    <circle cx="18" cy="24" r="1.6" fill="#2a1a55" />
+    <circle cx="17" cy="22.5" r="1.1" fill="#ffffff" />
+    <circle class="monster-eye" cx="36" cy="24" r="5" fill="#ffffff" stroke="#2a1a55" stroke-width="1.8" />
+    <circle class="monster-pupil" cx="36" cy="24" r="2.6" fill="#047857" />
+    <circle cx="36" cy="24" r="1.6" fill="#2a1a55" />
+    <circle cx="35" cy="22.5" r="1.1" fill="#ffffff" />
+    <ellipse cx="11" cy="28" rx="2.5" ry="1.4" fill="#059669" opacity="0.5" />
+    <ellipse cx="43" cy="28" rx="2.5" ry="1.4" fill="#059669" opacity="0.5" />
+  </svg>`,
+
+  // 3: 芒黃笑瞇瞇元氣怪 (頭頂小綠苗葉、歡樂笑瞇瞇彎眼)
+  `<svg viewBox="0 0 54 38" width="54" height="38" class="monster-decor-svg">
+    <path d="M 27 15 C 24 9 20 7 16 9 C 18 13 22 14 26 15 Z" fill="#4ade80" stroke="#2a1a55" stroke-width="2" />
+    <path d="M 27 15 C 30 9 34 7 38 9 C 36 13 32 14 28 15 Z" fill="#22c55e" stroke="#2a1a55" stroke-width="2" />
+    <path class="monster-eye" d="M 14 25 Q 18 19 22 25" stroke="#2a1a55" stroke-width="2.6" stroke-linecap="round" fill="none" />
+    <path class="monster-eye" d="M 32 25 Q 36 19 40 25" stroke="#2a1a55" stroke-width="2.6" stroke-linecap="round" fill="none" />
+    <ellipse cx="12" cy="28" rx="3" ry="1.6" fill="#ea580c" opacity="0.5" />
+    <ellipse cx="42" cy="28" rx="3" ry="1.6" fill="#ea580c" opacity="0.5" />
+  </svg>`,
+
+  // 4: 葡萄紫小精靈怪 (兩側精靈耳、靈動大眼)
+  `<svg viewBox="0 0 54 38" width="54" height="38" class="monster-decor-svg">
+    <polygon points="12,16 3,7 15,11" fill="#c084fc" stroke="#2a1a55" stroke-width="2" stroke-linejoin="round" />
+    <polygon points="42,16 51,7 39,11" fill="#c084fc" stroke="#2a1a55" stroke-width="2" stroke-linejoin="round" />
+    <circle class="monster-eye" cx="18" cy="24" r="5" fill="#ffffff" stroke="#2a1a55" stroke-width="1.8" />
+    <circle class="monster-pupil" cx="18" cy="24" r="2.8" fill="#7e22ce" />
+    <circle cx="18" cy="24" r="1.6" fill="#2a1a55" />
+    <circle cx="17" cy="22.5" r="1.2" fill="#ffffff" />
+    <circle cx="19" cy="25" r="0.6" fill="#ffffff" />
+    <circle class="monster-eye" cx="36" cy="24" r="5" fill="#ffffff" stroke="#2a1a55" stroke-width="1.8" />
+    <circle class="monster-pupil" cx="36" cy="24" r="2.8" fill="#7e22ce" />
+    <circle cx="36" cy="24" r="1.6" fill="#2a1a55" />
+    <circle cx="35" cy="22.5" r="1.2" fill="#ffffff" />
+    <circle cx="37" cy="25" r="0.6" fill="#ffffff" />
+    <ellipse cx="11" cy="28" rx="2.5" ry="1.4" fill="#a855f7" opacity="0.6" />
+    <ellipse cx="43" cy="28" rx="2.5" ry="1.4" fill="#a855f7" opacity="0.6" />
+  </svg>`,
+].map((s) => s.replace(/>\s+</g, '><').trim());
+
 function renderAnswerSlots(view) {
   const container = $('answer-slots');
   container.innerHTML = '';
@@ -449,6 +540,8 @@ function renderAnswerSlots(view) {
     if (slot.tileId) {
       el.textContent = slot.letter;
       el.classList.add('filled');
+      const skinIndex = getMonsterSkinIndex(slot.letter);
+      el.classList.add(`monster-skin-${skinIndex}`);
       if (slot.hinted) el.classList.add('hinted');
     }
     el.addEventListener('click', () => {
@@ -465,10 +558,23 @@ function renderTiles(view) {
   const container = $('tile-area');
   container.innerHTML = '';
   view.tiles.forEach((tile) => {
+    const skinIndex = getMonsterSkinIndex(tile.letter);
     const btn = document.createElement('button');
-    btn.className = 'letter-tile' + (tile.used ? ' used' : '');
-    btn.textContent = tile.letter;
+    btn.className = `letter-tile monster-skin-${skinIndex}` + (tile.used ? ' used' : '');
     btn.disabled = tile.used;
+
+    const decor = document.createElement('span');
+    decor.className = 'monster-decor';
+    decor.setAttribute('aria-hidden', 'true');
+    decor.innerHTML = MONSTER_DECOR_SVGS[skinIndex];
+
+    const letterSpan = document.createElement('span');
+    letterSpan.className = 'tile-letter';
+    letterSpan.textContent = tile.letter;
+
+    btn.appendChild(decor);
+    btn.appendChild(letterSpan);
+
     bindTileInteraction(btn, tile.id);
     container.appendChild(btn);
   });
@@ -530,6 +636,7 @@ function placeLetter(tileId) {
   if (!session) return;
   const res = placeLetterInSlot(session, tileId);
   if (!res) return;
+  playPopSound();
   const view = getCurrentQuestionView(session);
   renderAnswerSlots(view);
   renderTiles(view);
@@ -550,11 +657,14 @@ function removeBackTo(slotIndex) {
   if (!session) return;
   let view = getCurrentQuestionView(session);
   let guard = view.slots.length + 1;
+  let removedCount = 0;
   while (guard-- > 0 && view.slots[slotIndex] && view.slots[slotIndex].tileId !== null) {
     const res = removeLastLetter(session);
     if (!res) break;
+    removedCount++;
     view = getCurrentQuestionView(session);
   }
+  if (removedCount > 0) playPopSound();
   renderAnswerSlots(view);
   renderTiles(view);
 }
@@ -563,6 +673,7 @@ function removeLastLetterAndRender() {
   if (!session) return;
   const res = removeLastLetter(session);
   if (!res) return;
+  playPopSound();
   const view = getCurrentQuestionView(session);
   renderAnswerSlots(view);
   renderTiles(view);

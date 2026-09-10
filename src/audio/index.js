@@ -448,6 +448,34 @@ export function playStarPopSound() {
   playTone(1046.5, 0.14, 0);
 }
 
+/** 點擊或填入字母小怪獸時的卡通泡泡彈跳音效（Web Audio）。 @returns {void} */
+export function playPopSound() {
+  if (!soundEnabled || !audioCtx) return;
+  try {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    const t0 = audioCtx.currentTime;
+    osc.type = 'sine';
+    if (typeof osc.frequency.setValueAtTime === 'function') {
+      osc.frequency.setValueAtTime(420, t0);
+      if (typeof osc.frequency.exponentialRampToValueAtTime === 'function') {
+        osc.frequency.exponentialRampToValueAtTime(860, t0 + 0.06);
+      }
+    } else {
+      osc.frequency.value = 600;
+    }
+    gain.gain.setValueAtTime(0.0001, t0);
+    gain.gain.exponentialRampToValueAtTime(0.24, t0 + 0.015);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.08);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start(t0);
+    osc.stop(t0 + 0.09);
+  } catch (err) {
+    // 忽略
+  }
+}
+
 /**
  * 音效開關（不影響語音朗讀，只影響上面三個合成音效函式）。
  * @param {boolean} enabled

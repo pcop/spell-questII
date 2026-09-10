@@ -169,7 +169,7 @@ describe('setSoundEnabled 影響合成音效', () => {
     expect(MockAudioContext.oscillators.length).toBeGreaterThan(0);
   });
 
-  it('playWrongSound / playStarPopSound 也遵守 setSoundEnabled(false)', async () => {
+  it('playWrongSound / playStarPopSound / playPopSound 也遵守 setSoundEnabled(false)', async () => {
     installBrowserMocks();
     const audio = await freshAudioModule();
     audio.unlockAudio();
@@ -178,7 +178,12 @@ describe('setSoundEnabled 影響合成音效', () => {
     audio.setSoundEnabled(false);
     audio.playWrongSound();
     audio.playStarPopSound();
+    audio.playPopSound();
     expect(MockAudioContext.oscillators.length).toBe(0);
+
+    audio.setSoundEnabled(true);
+    audio.playPopSound();
+    expect(MockAudioContext.oscillators.length).toBeGreaterThan(0);
   });
 });
 
@@ -418,6 +423,7 @@ describe('沒有任何瀏覽器 API 時（真實 vitest node 環境的預設狀�
     expect(() => audio.playCorrectSound()).not.toThrow();
     expect(() => audio.playWrongSound()).not.toThrow();
     expect(() => audio.playStarPopSound()).not.toThrow();
+    expect(() => audio.playPopSound()).not.toThrow();
     expect(() => audio.setSoundEnabled(false)).not.toThrow();
     expect(() => audio.setSpeechRate(0.5)).not.toThrow();
   });
