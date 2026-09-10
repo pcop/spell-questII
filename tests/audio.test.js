@@ -185,6 +185,23 @@ describe('setSoundEnabled 影響合成音效', () => {
     audio.playPopSound();
     expect(MockAudioContext.oscillators.length).toBeGreaterThan(0);
   });
+
+  it('playRandomAnimalSound 遵守 setSoundEnabled(false)，啟用時隨機播放動物音效', async () => {
+    installBrowserMocks();
+    const audio = await freshAudioModule();
+
+    audio.setSoundEnabled(false);
+    const silentResult = audio.playRandomAnimalSound();
+    expect(silentResult).toBeNull();
+    expect(MockAudio.instances.length).toBe(0);
+
+    audio.setSoundEnabled(true);
+    const playedAnimal = audio.playRandomAnimalSound();
+    expect(audio.ANIMAL_SOUNDS).toContain(playedAnimal);
+    expect(MockAudio.instances.length).toBeGreaterThan(0);
+    const animalAudio = MockAudio.instances.find((a) => a.src === `/animal-sfx/${playedAnimal}.mp3`);
+    expect(animalAudio).toBeTruthy();
+  });
 });
 
 describe('setSpeechRate 影響之後的播放速度', () => {
@@ -406,6 +423,17 @@ describe('preloadEntryAudio', () => {
     const count = MockAudio.instances.filter((a) => a.src === '/words-audio/cat.mp3').length;
     expect(count).toBe(1);
   });
+
+  it('preloadAnimalAudio 預載 5 種動物音效', async () => {
+    installBrowserMocks();
+    const audio = await freshAudioModule();
+
+    audio.preloadAnimalAudio();
+    const loadedSrcs = MockAudio.instances.map((a) => a.src);
+    audio.ANIMAL_SOUNDS.forEach((name) => {
+      expect(loadedSrcs).toContain(`/animal-sfx/${name}.mp3`);
+    });
+  });
 });
 
 describe('沒有任何瀏覽器 API 時（真實 vitest node 環境的預設狀態）優雅降級', () => {
@@ -420,10 +448,12 @@ describe('沒有任何瀏覽器 API 時（真實 vitest node 環境的預設狀�
       audio.speakPhonics({ word: 'cat', phonics: { chunks: ['c', 'a', 't'], silent: [] } })
     ).not.toThrow();
     expect(() => audio.preloadEntryAudio({ word: 'cat', phonics: { chunks: ['c', 'a', 't'] } })).not.toThrow();
+    expect(() => audio.preloadAnimalAudio()).not.toThrow();
     expect(() => audio.playCorrectSound()).not.toThrow();
     expect(() => audio.playWrongSound()).not.toThrow();
     expect(() => audio.playStarPopSound()).not.toThrow();
     expect(() => audio.playPopSound()).not.toThrow();
+    expect(() => audio.playRandomAnimalSound()).not.toThrow();
     expect(() => audio.setSoundEnabled(false)).not.toThrow();
     expect(() => audio.setSpeechRate(0.5)).not.toThrow();
   });

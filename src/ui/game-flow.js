@@ -56,6 +56,8 @@ import {
   playWrongSound,
   playStarPopSound,
   playPopSound,
+  playRandomAnimalSound,
+  preloadAnimalAudio,
   preloadEntryAudio,
 } from '../audio/index.js';
 
@@ -117,6 +119,7 @@ export async function initGameFlow() {
     setSoundEnabled(settings.soundEnabled);
     setSpeechRate(settings.speechRate);
     initVoices();
+    preloadAnimalAudio();
     mascot.setMascotIdleMessages(messages.mascotIdle);
     mascot.initMascot();
     showView('splash');
@@ -636,7 +639,7 @@ function placeLetter(tileId) {
   if (!session) return;
   const res = placeLetterInSlot(session, tileId);
   if (!res) return;
-  playPopSound();
+  playRandomAnimalSound();
   const view = getCurrentQuestionView(session);
   renderAnswerSlots(view);
   renderTiles(view);

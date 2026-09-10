@@ -32,6 +32,8 @@ let speechRate = 0.8;
 
 let wordAudioEl = null;
 let phonicsAudioEl = null;
+let animalAudioEl = null;
+let lastAnimalIndex = -1;
 let phonicsAudioHandlers = null; // { onEnded, onError } —— 目前掛在 phonicsAudioEl 上的那一組監聽器
 let phonicsPlaybackId = 0; // 每次呼叫 speakPhonics() 就 +1，播放序列裡每一步都檢查序號是否還是最新的
 
@@ -64,6 +66,11 @@ function getPhonicsAudioEl() {
   return phonicsAudioEl;
 }
 
+function getAnimalAudioEl() {
+  if (!animalAudioEl && hasAudioCtor()) animalAudioEl = new Audio();
+  return animalAudioEl;
+}
+
 // ---------- 音訊快取與預載入 ----------
 
 // `import.meta.env.BASE_URL` 是 Vite 的部署路徑前綴（本機開發是 '/'，部署到
@@ -78,6 +85,24 @@ function wordAudioUrl(word) {
 
 function phonicsAudioUrl(chunkName) {
   return BASE_URL + 'phonics-audio/' + encodeURIComponent(chunkName) + '.mp3';
+}
+
+/** 支援的可愛動物叫聲清單 */
+export const ANIMAL_SOUNDS = ['cat', 'dog', 'bird', 'sheep', 'duck'];
+
+function animalAudioUrl(animalName) {
+  return BASE_URL + 'animal-sfx/' + encodeURIComponent(animalName) + '.mp3';
+}
+
+/**
+ * 預載所有可愛動物叫聲檔案（cat, dog, bird, sheep, duck）。
+ * @returns {void}
+ */
+export function preloadAnimalAudio() {
+  if (!hasAudioCtor()) return;
+  ANIMAL_SOUNDS.forEach((name) => {
+    preloadAudio(animalAudioUrl(name));
+  });
 }
 
 function preloadAudio(url) {
@@ -474,6 +499,37 @@ export function playPopSound() {
   } catch (err) {
     // 忽略
   }
+}
+
+/**
+ * 隨機播放一種可愛動物叫聲（小貓、小狗、小鳥、小羊、小鴨）。
+ * 具備快速打斷前一聲（單音軌俐落切換）與 setSoundEnabled 檢查。
+ * @returns {string|null} 回傳播放的動物名稱，未播放或靜音時回傳 null
+ */
+export function playRandomAnimalSound() {
+  if (!soundEnabled) return null;
+  const el = getAnimalAudioEl();
+  if (!el) return null;
+
+  let nextIdx = Math.floor(Math.random() * ANIMAL_SOUNDS.length);
+  if (ANIMAL_SOUNDS.length > 1 && nextIdx === lastAnimalIndex) {
+    nextIdx = (nextIdx + 1 + Math.floor(Math.random() * (ANIMAL_SOUNDS.length - 1))) % ANIMAL_SOUNDS.length;
+  }
+  lastAnimalIndex = nextIdx;
+  const chosen = ANIMAL_SOUNDS[nextIdx];
+
+  try {
+    el.pause();
+    el.currentTime = 0;
+    el.src = animalAudioUrl(chosen);
+    const p = el.play();
+    if (p && typeof p.catch === 'function') {
+      p.catch(() => {});
+    }
+  } catch (err) {
+    // 忽略音訊播放異常
+  }
+  return chosen;
 }
 
 /**
