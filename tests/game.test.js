@@ -6,6 +6,9 @@ import {
   getAllWordsForTheme,
   getWordsForLevel,
   startLevel,
+  restoreLevelSession,
+  getActiveSession,
+  clearActiveSessionData,
   getCurrentQuestionView,
   placeLetterInSlot,
   removeLastLetter,
@@ -545,5 +548,79 @@ describe('getValidLevelCombos 排除複習關卡', () => {
     const combos = getValidLevelCombos();
     expect(combos).not.toContainEqual({ themeId: 'numbers', key: 'review' });
     expect(combos.some((c) => c.themeId === 'numbers' && c.key === 'review')).toBe(false);
+  });
+});
+
+describe('中途進度保留（ActiveSession）與還原（restoreLevelSession）', () => {
+  it('startLevel 建立關卡時自動暫存 activeSession', () => {
+    const session = startLevel('animals', '1');
+    const active = getActiveSession();
+    expect(active).toBeTruthy();
+    expect(active.themeId).toBe('animals');
+    expect(active.levelKey).toBe('1');
+    expect(active.currentIndex).toBe(0);
+    expect(active.words).toHaveLength(session.words.length);
+  });
+
+  it('作答前進時同步更新 activeSession，還原時當前題全新開始作答', () => {
+    const session = startLevel('animals', '1');
+    expect(session.words.length).toBeGreaterThan(1);
+
+    // 完成第 0 題
+    answerCorrectly(session);
+    advanceToNextQuestion(session);
+
+    // 目前在第 1 題
+    expect(session.currentIndex).toBe(1);
+    const active = getActiveSession();
+    expect(active.currentIndex).toBe(1);
+    expect(active.correctCount).toBe(1);
+
+    // 模擬中途中斷：使用 activeSession 還原
+    const restored = restoreLevelSession(active);
+    expect(restored).toBeTruthy();
+    expect(restored.currentIndex).toBe(1);
+    expect(restored.correctCount).toBe(1);
+    expect(restored.firstTryCorrect).toBe(1);
+
+    // 當前這題（第 1 題）是全新的未填狀態
+    const view = getCurrentQuestionView(restored);
+    expect(view.index).toBe(1);
+    expect(view.slots.every((s) => s.tileId === null)).toBe(true);
+    expect(view.tiles.every((t) => !t.used)).toBe(true);
+    expect(view.awaitingNext).toBe(false);
+  });
+
+  it('若在中斷前剛好答對但尚未按下一題（awaitingNext: true），還原時直接推進至下一題', () => {
+    const session = startLevel('animals', '1');
+    answerCorrectly(session);
+    expect(session.awaitingNext).toBe(true);
+
+    const active = getActiveSession();
+    expect(active.awaitingNext).toBe(true);
+    expect(active.currentIndex).toBe(0);
+
+    // 還原：應自動前進到第 1 題
+    const restored = restoreLevelSession(active);
+    expect(restored).toBeTruthy();
+    expect(restored.currentIndex).toBe(1);
+    expect(restored.awaitingNext).toBe(false);
+  });
+
+  it('關卡完成 finishLevel 後自動清除 activeSession', () => {
+    const session = startLevel('animals', '1');
+    playAllCorrect(session);
+    expect(getActiveSession()).toBeTruthy();
+
+    finishLevel(session);
+    expect(getActiveSession()).toBeNull();
+  });
+
+  it('clearActiveSessionData 手動清除暫存（模擬放棄離開）', () => {
+    startLevel('animals', '1');
+    expect(getActiveSession()).toBeTruthy();
+
+    clearActiveSessionData();
+    expect(getActiveSession()).toBeNull();
   });
 });

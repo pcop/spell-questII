@@ -36,7 +36,7 @@
 import { getWordsForLevel, getLevelDefsForTheme, getProgressStorageOverride } from './wordbank.js';
 import { buildTileSet, shuffleArray } from './helpers.js';
 import { getFullWordBank } from './wordbank.js';
-import { loadProgress, saveProgress } from '../progress/store.js';
+import { loadProgress, saveProgress, loadActiveSession, saveActiveSession, clearActiveSession } from '../progress/store.js';
 import { levelKey as progressLevelKey } from '../progress/schema.js';
 
 function getProgress() {
@@ -45,6 +45,45 @@ function getProgress() {
 
 function persistProgress(progress) {
   saveProgress(progress, getProgressStorageOverride());
+}
+
+function persistActiveSession(session) {
+  if (!session || !session.words || !session.words.length) {
+    clearActiveSession(getProgressStorageOverride());
+    return;
+  }
+  saveActiveSession(
+    {
+      themeId: session.themeId,
+      levelKey: session.levelKey,
+      kind: session.kind,
+      distractorCount: session.distractorCount,
+      words: session.words,
+      currentIndex: session.currentIndex,
+      correctCount: session.correctCount,
+      firstTryCorrect: session.firstTryCorrect,
+      totalWrongAttempts: session.totalWrongAttempts,
+      awaitingNext: session.awaitingNext,
+      savedAt: new Date().toISOString(),
+    },
+    getProgressStorageOverride()
+  );
+}
+
+/**
+ * 讀取目前儲存的未完成關卡進度。
+ * @returns {object|null}
+ */
+export function getActiveSession() {
+  return loadActiveSession(getProgressStorageOverride());
+}
+
+/**
+ * 清除目前儲存的未完成關卡進度（放棄離開或通關時呼叫）。
+ * @returns {void}
+ */
+export function clearActiveSessionData() {
+  clearActiveSession(getProgressStorageOverride());
 }
 
 function ensureLevelProgress(progress, themeId, key) {
@@ -108,7 +147,54 @@ export function startLevel(themeId, levelKey) {
     tiles: [],
   };
 
-  if (words.length > 0) loadQuestion(session);
+  if (words.length > 0) {
+    loadQuestion(session);
+    persistActiveSession(session);
+  }
+  return session;
+}
+
+/**
+ * 從中途暫存進度還原關卡 session。
+ * 遵守規格：當前題目全新開始（重設當前題槽位與嘗試次數，保留已完成題目的累計正確數、錯誤數）；
+ * 若中斷前處於答對等待下一題狀態，直接推進至下一題。
+ * @param {object} savedState
+ * @returns {import('./index.js').GameSession|null} 若狀態無效或已全數完成則回傳 null
+ */
+export function restoreLevelSession(savedState) {
+  if (!savedState || !Array.isArray(savedState.words) || savedState.words.length === 0) {
+    return null;
+  }
+  let targetIndex = typeof savedState.currentIndex === 'number' ? savedState.currentIndex : 0;
+  if (savedState.awaitingNext) {
+    targetIndex++;
+  }
+  if (targetIndex >= savedState.words.length) {
+    clearActiveSession(getProgressStorageOverride());
+    return null;
+  }
+
+  const session = {
+    themeId: savedState.themeId,
+    levelKey: String(savedState.levelKey),
+    kind: savedState.kind || 'tier',
+    distractorCount: savedState.distractorCount || 0,
+    words: savedState.words,
+    currentIndex: targetIndex,
+    correctCount: savedState.correctCount || 0,
+    firstTryCorrect: savedState.firstTryCorrect || 0,
+    totalWrongAttempts: savedState.totalWrongAttempts || 0,
+    attemptsThisWord: 0,
+    locked: false,
+    awaitingNext: false,
+    hintUsedThisWord: false,
+    hintSlotIndex: null,
+    slots: [],
+    tiles: [],
+  };
+
+  loadQuestion(session);
+  persistActiveSession(session);
   return session;
 }
 
@@ -233,6 +319,7 @@ export function checkAnswer(session) {
   lp.lastPlayedAt = new Date().toISOString();
   progress.lastPlayedAt = lp.lastPlayedAt;
   persistProgress(progress);
+  persistActiveSession(session);
 
   return { correct: isCorrect, entry };
 }
@@ -294,6 +381,7 @@ export function advanceToNextQuestion(session) {
     return { finished: true };
   }
   loadQuestion(session);
+  persistActiveSession(session);
   return { finished: false };
 }
 
@@ -348,6 +436,7 @@ export function finishLevel(session) {
   if (isNewSticker) progress.collectibles[key] = true;
 
   persistProgress(progress);
+  clearActiveSession(getProgressStorageOverride());
 
   return { stars, accuracy, isNewSticker };
 }

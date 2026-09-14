@@ -91,6 +91,9 @@ export {
 
 export {
   startLevel,
+  restoreLevelSession,
+  getActiveSession,
+  clearActiveSessionData,
   getCurrentQuestionView,
   placeLetterInSlot,
   removeLastLetter,

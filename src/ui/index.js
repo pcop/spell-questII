@@ -74,6 +74,8 @@ import {
   hideStickerModal,
   initGameFlow,
   leaveGame,
+  cancelLeaveGame,
+  confirmLeaveGame,
   onHintModeButtonsClick,
   onSoundToggleButtonsClick,
   onTileSoundButtonsClick,
@@ -194,6 +196,19 @@ export function bindStaticEvents() {
   const stickerModal = $('sticker-modal');
   if (stickerModal) stickerModal.addEventListener('click', onStickerModalBackdropClick);
 
+  const btnCancelLeave = $('btn-cancel-leave');
+  if (btnCancelLeave) btnCancelLeave.addEventListener('click', cancelLeaveGame);
+
+  const btnConfirmLeave = $('btn-confirm-leave');
+  if (btnConfirmLeave) btnConfirmLeave.addEventListener('click', confirmLeaveGame);
+
+  const confirmLeaveModal = $('confirm-leave-modal');
+  if (confirmLeaveModal) {
+    confirmLeaveModal.addEventListener('click', (e) => {
+      if (e.target && e.target.id === 'confirm-leave-modal') cancelLeaveGame();
+    });
+  }
+
   // Agent 5 的三個畫面各自的固定按鈕綁定，只應該呼叫一次。
   bindFlashcardEvents();
   bindBlendEvents();
@@ -207,6 +222,11 @@ export function bindStaticEvents() {
  */
 export function handleKeydown(e) {
   if (e.ctrlKey || e.metaKey || e.altKey) return;
+  const confirmLeaveModal = $('confirm-leave-modal');
+  if (confirmLeaveModal && !confirmLeaveModal.hidden && (e.key === 'Escape' || e.code === 'Escape')) {
+    cancelLeaveGame();
+    return;
+  }
   const viewGame = $('view-game');
   const viewFlashcards = $('view-flashcards');
   if (viewGame && !viewGame.hidden) {

@@ -6,9 +6,13 @@ import {
   saveProgress,
   exportProgress,
   importProgress,
+  loadActiveSession,
+  saveActiveSession,
+  clearActiveSession,
   createMemoryStorage,
   STORAGE_KEY_V1,
   STORAGE_KEY_V2,
+  ACTIVE_SESSION_STORAGE_KEY,
 } from '../src/progress/store.js';
 
 // 一份完整的一代 v1 存檔（含 collectibles），照抄 README/CLAUDE.md 的範例
@@ -235,5 +239,66 @@ describe('store: exportProgress / importProgress', () => {
     const result = importProgress(JSON.stringify(malformed), storage);
     expect(result.ok).toBe(false);
     expect(loadProgress(storage)).toEqual(existing);
+  });
+});
+
+describe('activeSession 獨立暫存與讀取', () => {
+  let storage;
+  beforeEach(() => {
+    storage = createMemoryStorage();
+  });
+
+  it('saveActiveSession, loadActiveSession 與 clearActiveSession 正常存取', () => {
+    expect(loadActiveSession(storage)).toBeNull();
+
+    const dummySession = {
+      themeId: 'animals',
+      levelKey: '1',
+      kind: 'tier',
+      distractorCount: 1,
+      words: [{ id: 'cat', word: 'cat' }],
+      currentIndex: 0,
+      correctCount: 0,
+      firstTryCorrect: 0,
+      totalWrongAttempts: 0,
+      awaitingNext: false,
+    };
+
+    expect(saveActiveSession(dummySession, storage)).toBe(true);
+    const loaded = loadActiveSession(storage);
+    expect(loaded).toMatchObject(dummySession);
+
+    clearActiveSession(storage);
+    expect(loadActiveSession(storage)).toBeNull();
+  });
+
+  it('activeSession 完全不影響長期進度的匯出與匯入', () => {
+    const dummySession = {
+      themeId: 'animals',
+      levelKey: '1',
+      words: [{ id: 'cat', word: 'cat' }],
+      currentIndex: 1,
+    };
+    saveActiveSession(dummySession, storage);
+
+    const exported = exportProgress(storage);
+    expect(exported).not.toContain('currentIndex');
+    expect(exported).not.toContain(ACTIVE_SESSION_STORAGE_KEY);
+
+    // 匯入進度亦不抹除 activeSession
+    const progressData = createDefaultProgress();
+    importProgress(JSON.stringify(progressData), storage);
+    expect(loadActiveSession(storage)).toMatchObject(dummySession);
+  });
+
+  it('資料損毀或格式缺漏時自動容錯清除並回傳 null', () => {
+    storage.setItem(ACTIVE_SESSION_STORAGE_KEY, 'invalid-json{{{');
+    expect(loadActiveSession(storage)).toBeNull();
+    expect(storage.getItem(ACTIVE_SESSION_STORAGE_KEY)).toBeNull();
+
+    // 缺 words 陣列
+    storage.setItem(ACTIVE_SESSION_STORAGE_KEY, JSON.stringify({ themeId: 'animals', levelKey: '1' }));
+    expect(loadActiveSession(storage)).toBeNull();
+    expect(storage.getItem(ACTIVE_SESSION_STORAGE_KEY)).toBeNull();
   });
 });

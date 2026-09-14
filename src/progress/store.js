@@ -13,6 +13,7 @@ import { migrateV1ToV2 } from './migrate.js';
 
 export const STORAGE_KEY_V2 = 'spelling_game_progress_v2';
 export const STORAGE_KEY_V1 = 'spelling_game_progress_v1';
+export const ACTIVE_SESSION_STORAGE_KEY = 'spelling_game_active_session';
 
 /**
  * 建立一份記憶體版的 storage（跟 localStorage 同樣的 getItem/setItem 介面）。
@@ -157,3 +158,66 @@ export function importProgress(json, storage = getDefaultStorage()) {
   saveProgress(migrated, storage);
   return { ok: true, data: migrated };
 }
+
+/**
+ * 讀取暫存的未完成關卡進度（Active Session）。
+ * 具備格式防禦：若資料損毀或格式不符，自動安全清除並回傳 null。
+ * @param {{getItem: Function, setItem: Function, removeItem: Function}} [storage]
+ * @returns {object|null}
+ */
+export function loadActiveSession(storage = getDefaultStorage()) {
+  try {
+    const raw = storage.getItem(ACTIVE_SESSION_STORAGE_KEY);
+    if (!raw) return null;
+    const data = JSON.parse(raw);
+    if (
+      isPlainObject(data) &&
+      typeof data.themeId === 'string' &&
+      data.levelKey != null &&
+      Array.isArray(data.words) &&
+      data.words.length > 0 &&
+      typeof data.currentIndex === 'number'
+    ) {
+      return data;
+    }
+    // 格式不符視同損毀，予以清除
+    clearActiveSession(storage);
+    return null;
+  } catch (err) {
+    clearActiveSession(storage);
+    return null;
+  }
+}
+
+/**
+ * 儲存未完成關卡進度（Active Session）。
+ * @param {object} data
+ * @param {{getItem: Function, setItem: Function, removeItem: Function}} [storage]
+ * @returns {boolean}
+ */
+export function saveActiveSession(data, storage = getDefaultStorage()) {
+  try {
+    if (!isPlainObject(data)) return false;
+    storage.setItem(ACTIVE_SESSION_STORAGE_KEY, JSON.stringify(data));
+    return true;
+  } catch (err) {
+    console.warn('無法暫存未完成關卡進度', err);
+    return false;
+  }
+}
+
+/**
+ * 清除未完成關卡進度（通關或主動放棄時呼叫）。
+ * @param {{getItem: Function, setItem: Function, removeItem: Function}} [storage]
+ * @returns {void}
+ */
+export function clearActiveSession(storage = getDefaultStorage()) {
+  try {
+    if (typeof storage.removeItem === 'function') {
+      storage.removeItem(ACTIVE_SESSION_STORAGE_KEY);
+    }
+  } catch (err) {
+    // 忽略清除異常
+  }
+}
+

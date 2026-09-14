@@ -36,6 +36,9 @@ import {
   getAllWordsForTheme,
   getWordsForLevel,
   startLevel as gameStartLevel,
+  restoreLevelSession,
+  getActiveSession,
+  clearActiveSessionData,
   getCurrentQuestionView,
   placeLetterInSlot,
   removeLastLetter,
@@ -76,7 +79,7 @@ import { loadProgress, saveProgress } from '../progress/store.js';
 import { levelKey as progressLevelKey } from '../progress/schema.js';
 import { loadGameData } from '../data/loadGameData.js';
 
-import { showView } from './index.js';
+import { showView, showToast } from './index.js';
 import * as mascot from './mascot.js';
 // Agent 5 的檔案（字卡瀏覽／拼讀練習／我的進度頁），目前都已存在且各自的
 // 頂部註解明講「呼叫端在 game-flow.js」，這裡只是呼叫它們公開的 export，
@@ -149,6 +152,63 @@ async function setupThreeFx() {
   // 讓「我的進度」頁的診斷按鈕（progress-page.js）知道結果，避免它自己再呼叫
   // 一次 initThreeFx() 疊出第二個 three.js 場景/canvas。
   setThreeFxReady(ok);
+
+  if (ok) {
+    checkAndResumeActiveSession();
+  }
+}
+
+/**
+ * 檢查並自動恢復中途未完成的關卡。
+ * 若存在有效的未完成進度，自動跳過封面進入關卡，展示吉祥物與提示條回饋；
+ * 若資料異常或不存在，平穩留在主畫面。
+ * @returns {boolean}
+ */
+export function checkAndResumeActiveSession() {
+  const saved = getActiveSession();
+  if (!saved) return false;
+
+  try {
+    const theme = getThemes().find((t) => t.id === saved.themeId);
+    if (!theme) {
+      clearActiveSessionData();
+      return false;
+    }
+
+    clearTimeout(pendingRetryTimeoutId);
+    pendingRetryTimeoutId = null;
+    cancelResultCelebration();
+    mascot.pickRandomMascot();
+
+    currentThemeId = saved.themeId;
+    currentLevelKey = saved.levelKey;
+
+    session = restoreLevelSession(saved);
+    if (!session) {
+      clearActiveSessionData();
+      return false;
+    }
+
+    uiScore = session.correctCount;
+    const scoreEl = $('game-score');
+    if (scoreEl) scoreEl.textContent = '✅ ' + uiScore;
+    showView('game');
+    loadQuestionView();
+
+    const view = getCurrentQuestionView(session);
+    const resumeText = `歡迎回來！繼續挑戰第 ${view.index + 1}/${view.total} 題 🚀`;
+    mascot.showMascotBubble(resumeText);
+    mascot.mascotReactCheer();
+    showToast(`已為你恢復上次進度（第 ${view.index + 1}/${view.total} 題）`);
+
+    return true;
+  } catch (err) {
+    console.warn('還原中途進度失敗，平穩回退至主畫面', err);
+    clearActiveSessionData();
+    session = null;
+    showView('splash');
+    return false;
+  }
 }
 
 // three.js 是拼字關卡的硬性需求（不做 2D 備援，見 規劃.md 決策 3）：「開始
@@ -875,15 +935,35 @@ export function cancelResultCelebration() {
   if (modal) modal.hidden = true;
 }
 
-/** `#btn-leave-game` 點擊。 @returns {void} */
+/** `#btn-leave-game` 點擊：彈出確認對話框，避免誤觸放棄中途進度。 @returns {void} */
 export function leaveGame() {
+  const modal = $('confirm-leave-modal');
+  if (modal) {
+    modal.hidden = false;
+  } else {
+    confirmLeaveGame();
+  }
+}
+
+/** 隱藏確認離開彈窗（點擊取消或遮罩）。 @returns {void} */
+export function cancelLeaveGame() {
+  const modal = $('confirm-leave-modal');
+  if (modal) modal.hidden = true;
+}
+
+/** 確定放棄並離開關卡：清除暫存進度並回到關卡選單。 @returns {void} */
+export function confirmLeaveGame() {
+  cancelLeaveGame();
   clearTimeout(pendingRetryTimeoutId);
   pendingRetryTimeoutId = null;
   cancelResultCelebration();
-  // 中途離開沒打完這關，清掉 session：回到選難度畫面後，語速試聽按鈕之類
-  // 的程式碼不應該還讀到一個已經離開、卡在某一題的 session。
+  clearActiveSessionData();
   session = null;
-  showView('level-select');
+  if (currentThemeId) {
+    showLevelSelect(currentThemeId);
+  } else {
+    showView('level-select');
+  }
 }
 
 /** `#btn-replay` 點擊。 @returns {void} */

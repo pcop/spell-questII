@@ -206,6 +206,12 @@ body {
   box-shadow: 0 5px 0 var(--color-secondary-dark);
 }
 
+.btn-danger {
+  background: var(--color-danger);
+  color: #fff;
+  box-shadow: 0 5px 0 var(--color-danger-dark);
+}
+
 .btn-back {
   background: transparent;
   color: var(--color-text-soft);
@@ -1001,6 +1007,50 @@ body {
 .sticker-modal-title { font-size: 21px; font-weight: 800; color: var(--color-primary-dark); margin: 0 0 14px; }
 .sticker-modal-icon { font-size: 66px; margin-bottom: 10px; }
 .sticker-modal-name { font-size: 16px; font-weight: 800; margin: 0 0 22px; color: var(--color-text); }
+
+/* 離開遊戲確認彈窗 */
+.confirm-modal:not([hidden]) {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-sticker);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(20, 12, 42, 0.65);
+  padding: 16px;
+}
+.confirm-modal-card {
+  background: var(--color-panel);
+  border: var(--border-w) solid var(--color-border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-panel);
+  padding: 28px 24px;
+  text-align: center;
+  max-width: 320px;
+  width: 100%;
+  animation: panelIn 0.25s ease-out;
+}
+.confirm-modal-title {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--color-primary-dark);
+  margin: 0 0 10px;
+}
+.confirm-modal-message {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-text-soft);
+  margin: 0 0 22px;
+  line-height: 1.4;
+}
+.confirm-modal-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+.confirm-modal-actions .btn {
+  flex: 1;
+}
 
 /* ==========================================================================
    Animations

@@ -179,4 +179,71 @@ describe('Phase 1 整合 smoke test（主線流程）', () => {
     expect(document.getElementById('view-blend').hidden).toBe(false);
     expect(document.getElementById('blend-choices').children.length).toBe(3);
   });
+
+  it('離開遊戲防誤觸確認：點擊 ✕ 彈窗確認，取消繼續挑戰，確定才離開並清除暫存', async () => {
+    loadIndexHtmlIntoDocument();
+    const { bindStaticEvents } = await import('../src/ui/index.js');
+    const { initGameFlow, startLevelAndShow } = await import('../src/ui/game-flow.js');
+    const { getActiveSession } = await import('../src/game/index.js');
+    bindStaticEvents();
+    await initGameFlow();
+    await flush();
+
+    // 開始一個關卡
+    startLevelAndShow('animals', '1');
+    expect(document.getElementById('view-game').hidden).toBe(false);
+    expect(getActiveSession()).toBeTruthy();
+
+    const leaveModal = document.getElementById('confirm-leave-modal');
+    expect(leaveModal.hidden).toBe(true);
+
+    // 點擊離開按鈕，彈出確認對話框
+    document.getElementById('btn-leave-game').click();
+    expect(leaveModal.hidden).toBe(false);
+    expect(document.getElementById('view-game').hidden).toBe(false);
+
+    // 點擊「繼續挑戰」，關閉彈窗並維持在遊戲畫面
+    document.getElementById('btn-cancel-leave').click();
+    expect(leaveModal.hidden).toBe(true);
+    expect(document.getElementById('view-game').hidden).toBe(false);
+    expect(getActiveSession()).toBeTruthy();
+
+    // 再次點擊離開並按下「確定離開」
+    document.getElementById('btn-leave-game').click();
+    expect(leaveModal.hidden).toBe(false);
+    document.getElementById('btn-confirm-leave').click();
+    expect(leaveModal.hidden).toBe(true);
+    expect(document.getElementById('view-level-select').hidden).toBe(false);
+    expect(getActiveSession()).toBeNull();
+  });
+
+  it('重新開啟遊戲時若有中途進度，自動恢復進入該題目並給予吉祥物回饋', async () => {
+    loadIndexHtmlIntoDocument();
+    const { bindStaticEvents } = await import('../src/ui/index.js');
+    const { initGameFlow, startLevelAndShow } = await import('../src/ui/game-flow.js');
+    const { advanceToNextQuestion, getCurrentQuestionView } = await import('../src/game/index.js');
+    bindStaticEvents();
+
+    // 模擬先前進行到一半的關卡
+    startLevelAndShow('animals', '1');
+    // 答對第 0 題並前進
+    document.getElementById('btn-next-question').hidden = false;
+    document.getElementById('btn-next-question').click();
+    await flush();
+
+    // 模擬使用者關閉後重新開啟遊戲：重新載入 HTML 並執行 initGameFlow
+    loadIndexHtmlIntoDocument();
+    bindStaticEvents();
+    await initGameFlow();
+    await flush();
+
+    // 驗證自動跳過封面，直接進入遊戲畫面
+    expect(document.getElementById('view-game').hidden).toBe(false);
+    expect(document.getElementById('view-splash').hidden).toBe(true);
+
+    // 驗證吉祥物對話泡泡已出現
+    const bubble = document.getElementById('mascot-bubble');
+    expect(bubble).toBeTruthy();
+    expect(bubble.textContent).toMatch(/歡迎回來/);
+  });
 });
