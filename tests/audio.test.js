@@ -186,50 +186,50 @@ describe('setSoundEnabled 影響合成音效', () => {
     expect(MockAudioContext.oscillators.length).toBeGreaterThan(0);
   });
 
-  it('playRandomCatSound (及相容別名) 遵守 setSoundEnabled(false)，啟用時隨機播放貓咪音效', async () => {
+  it('playRandomAnimalSound (及相容別名) 遵守 setSoundEnabled(false)，啟用時隨機播放動物音效', async () => {
     installBrowserMocks();
     const audio = await freshAudioModule();
 
     audio.setSoundEnabled(false);
-    const silentResult = audio.playRandomCatSound();
+    const silentResult = audio.playRandomAnimalSound();
     expect(silentResult).toBeNull();
-    expect(audio.playRandomAnimalSound()).toBeNull();
+    expect(audio.playRandomCatSound()).toBeNull();
     expect(MockAudio.instances.length).toBe(0);
 
     audio.setSoundEnabled(true);
-    const playedCat = audio.playRandomCatSound();
-    expect(audio.CAT_SOUNDS).toContain(playedCat);
+    const playedAnimal = audio.playRandomAnimalSound();
+    expect(audio.ANIMAL_SOUNDS).toContain(playedAnimal);
     expect(MockAudio.instances.length).toBeGreaterThan(0);
-    const catAudio = MockAudio.instances.find((a) => a.src === `/cat-sfx/${playedCat}.mp3`);
-    expect(catAudio).toBeTruthy();
+    const animalAudio = MockAudio.instances.find((a) => a.src === `/animal-sfx/${playedAnimal}.mp3`);
+    expect(animalAudio).toBeTruthy();
   });
 
-  it('相同字母固定配置相同音效：getCatSoundForLetter 與 playCatSoundForLetter 永遠給出一致音效', async () => {
+  it('相同字母固定配置相同音效：getAnimalSoundForLetter 與 playAnimalSoundForLetter 永遠給出一致音效', async () => {
     installBrowserMocks();
     const audio = await freshAudioModule();
 
     // 1. 同字母大小寫一致
-    const aLower = audio.getCatSoundForLetter('a');
-    const aUpper = audio.getCatSoundForLetter('A');
+    const aLower = audio.getAnimalSoundForLetter('a');
+    const aUpper = audio.getAnimalSoundForLetter('A');
     expect(aLower).toBe(aUpper);
-    expect(audio.CAT_SOUNDS).toContain(aLower);
+    expect(audio.ANIMAL_SOUNDS).toContain(aLower);
 
     // 2. 測試連續呼叫相同字母固定配置相同音效
-    const sound1 = audio.playCatSoundForLetter('b');
-    const sound2 = audio.playCatSoundForLetter('b');
+    const sound1 = audio.playAnimalSoundForLetter('b');
+    const sound2 = audio.playAnimalSoundForLetter('b');
     expect(sound1).toBe(sound2);
-    expect(sound1).toBe(audio.getCatSoundForLetter('b'));
+    expect(sound1).toBe(audio.getAnimalSoundForLetter('b'));
 
     // 3. 測試 26 個英文字母皆有合法配置且相同字母必定相同
     'abcdefghijklmnopqrstuvwxyz'.split('').forEach((ch) => {
-      const s = audio.getCatSoundForLetter(ch);
-      expect(audio.CAT_SOUNDS).toContain(s);
-      expect(audio.getCatSoundForLetter(ch.toUpperCase())).toBe(s);
+      const s = audio.getAnimalSoundForLetter(ch);
+      expect(audio.ANIMAL_SOUNDS).toContain(s);
+      expect(audio.getAnimalSoundForLetter(ch.toUpperCase())).toBe(s);
     });
 
-    // 4. 靜音時 playCatSoundForLetter 回傳 null 且不播放
+    // 4. 靜音時 playAnimalSoundForLetter 回傳 null 且不播放
     audio.setSoundEnabled(false);
-    expect(audio.playCatSoundForLetter('a')).toBeNull();
+    expect(audio.playAnimalSoundForLetter('a')).toBeNull();
   });
 });
 
@@ -259,17 +259,21 @@ describe('playTileSound 與 setTileSoundMode', () => {
     expect(el).toBeTruthy();
   });
 
-  it('setTileSoundMode("cat") 切換為貓咪音效模式，播放 /cat-sfx/<catN>.mp3', async () => {
+  it('setTileSoundMode("animal") 切換為動物音效模式，播放 /animal-sfx/<animal>.mp3，且相容 "cat"', async () => {
     installBrowserMocks();
     const audio = await freshAudioModule();
 
-    audio.setTileSoundMode('cat');
-    expect(audio.getTileSoundMode()).toBe('cat');
+    audio.setTileSoundMode('animal');
+    expect(audio.getTileSoundMode()).toBe('animal');
     const res = audio.playTileSound('c');
-    expect(audio.CAT_SOUNDS).toContain(res);
+    expect(audio.ANIMAL_SOUNDS).toContain(res);
 
-    const el = MockAudio.instances.find((a) => a.src === `/cat-sfx/${res}.mp3`);
+    const el = MockAudio.instances.find((a) => a.src === `/animal-sfx/${res}.mp3`);
     expect(el).toBeTruthy();
+
+    // 相容 'cat'
+    audio.setTileSoundMode('cat');
+    expect(audio.getTileSoundMode()).toBe('animal');
   });
 
   it('playTileSound 支援傳入第二參數 mode 覆蓋當前預設', async () => {
@@ -523,14 +527,14 @@ describe('preloadEntryAudio', () => {
     expect(count).toBe(1);
   });
 
-  it('preloadCatAudio 預載 5 種貓咪音效', async () => {
+  it('preloadAnimalAudio 預載 6 種動物音效（含相容 preloadCatAudio）', async () => {
     installBrowserMocks();
     const audio = await freshAudioModule();
 
-    audio.preloadCatAudio();
+    audio.preloadAnimalAudio();
     const loadedSrcs = MockAudio.instances.map((a) => a.src);
-    audio.CAT_SOUNDS.forEach((name) => {
-      expect(loadedSrcs).toContain(`/cat-sfx/${name}.mp3`);
+    audio.ANIMAL_SOUNDS.forEach((name) => {
+      expect(loadedSrcs).toContain(`/animal-sfx/${name}.mp3`);
     });
   });
 });

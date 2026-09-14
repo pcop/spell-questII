@@ -56,11 +56,11 @@ import {
   playWrongSound,
   playStarPopSound,
   playPopSound,
-  playRandomCatSound,
-  playCatSoundForLetter,
+  playRandomAnimalSound,
+  playAnimalSoundForLetter,
   playTileSound,
   setTileSoundMode,
-  preloadCatAudio,
+  preloadAnimalAudio,
   preloadLettersAudio,
   preloadEntryAudio,
 } from '../audio/index.js';
@@ -124,7 +124,7 @@ export async function initGameFlow() {
     setSpeechRate(settings.speechRate);
     setTileSoundMode(settings.tileSound || 'phonics');
     initVoices();
-    preloadCatAudio();
+    preloadAnimalAudio();
     preloadLettersAudio();
     mascot.setMascotIdleMessages(messages.mascotIdle);
     mascot.initMascot();
@@ -312,7 +312,7 @@ export function renderHintModeButtons() {
   document.querySelectorAll('#sound-toggle-buttons .btn-toggle').forEach((b) => {
     b.classList.toggle('active', (b.dataset.soundEnabled === 'true') === settings.soundEnabled);
   });
-  const currentTileSound = settings.tileSound || 'phonics';
+  const currentTileSound = settings.tileSound === 'cat' ? 'animal' : (settings.tileSound || 'phonics');
   document.querySelectorAll('#tile-sound-buttons .btn-toggle').forEach((b) => {
     b.classList.toggle('active', b.dataset.tileSound === currentTileSound);
   });

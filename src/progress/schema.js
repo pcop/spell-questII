@@ -29,7 +29,7 @@
  * @property {'image'|'audio'|'both'} hintMode - 對應一代 index.html 的三個提示模式按鈕
  * @property {boolean} soundEnabled
  * @property {number} speechRate
- * @property {'phonics'|'letter'|'cat'} [tileSound] - 方塊音效模式：自然發音（預設）、字母名稱、貓咪叫聲
+ * @property {'phonics'|'letter'|'animal'} [tileSound] - 方塊音效模式：自然發音（預設）、字母名稱、動物叫聲
  */
 
 /**

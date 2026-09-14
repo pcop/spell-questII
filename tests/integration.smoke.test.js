@@ -73,15 +73,15 @@ describe('Phase 1 整合 smoke test（主線流程）', () => {
     expect(tileSoundButtons).toBeTruthy();
     const phonicsBtn = tileSoundButtons.querySelector('[data-tile-sound="phonics"]');
     const letterBtn = tileSoundButtons.querySelector('[data-tile-sound="letter"]');
-    const catBtn = tileSoundButtons.querySelector('[data-tile-sound="cat"]');
+    const animalBtn = tileSoundButtons.querySelector('[data-tile-sound="animal"]');
     expect(phonicsBtn.classList.contains('active')).toBe(true);
 
     letterBtn.click();
     expect(letterBtn.classList.contains('active')).toBe(true);
     expect(phonicsBtn.classList.contains('active')).toBe(false);
 
-    catBtn.click();
-    expect(catBtn.classList.contains('active')).toBe(true);
+    animalBtn.click();
+    expect(animalBtn.classList.contains('active')).toBe(true);
 
     const levelGrid = document.getElementById('level-grid');
     const startBtn = levelGrid.querySelector('.level-start-btn:not(:disabled)');
