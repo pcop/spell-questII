@@ -103,13 +103,13 @@ export function preloadLettersAudio() {
   }
 }
 
-/** 支援的可愛動物叫聲清單（貓、狗、羊、豬、鳥、小雞） */
-export const ANIMAL_SOUNDS = ['cat', 'dog', 'sheep', 'pig', 'bird', 'chick'];
+/** 支援的可愛動物叫聲清單（貓、狗、羊、豬、鳥、小雞、小猴子） */
+export const ANIMAL_SOUNDS = ['cat', 'dog', 'sheep', 'pig', 'bird', 'chick', 'monkey'];
 /** 向後相容別名 */
 export const CAT_SOUNDS = ANIMAL_SOUNDS;
 
 /**
- * 26 個英文字母固定配置對應的可愛動物叫聲表（貓、狗、羊、豬、鳥、小雞）。
+ * 26 個英文字母固定配置對應的可愛動物叫聲表（貓、狗、羊、豬、鳥、小雞、小猴子）。
  * 相同的字母固定配置相同音效，並兼顧相鄰不同字母在常用單字中的音色旋律層次。
  */
 export const LETTER_ANIMAL_SOUND_MAP = {
@@ -120,16 +120,16 @@ export const LETTER_ANIMAL_SOUND_MAP = {
   e: 'dog',
   f: 'dog',
   g: 'cat',
-  h: 'bird',
+  h: 'monkey',
   i: 'sheep',
   j: 'dog',
-  k: 'bird',
+  k: 'monkey',
   l: 'bird',
-  m: 'sheep',
+  m: 'monkey',
   n: 'chick',
   o: 'pig',
   p: 'pig',
-  q: 'pig',
+  q: 'bird',
   r: 'chick',
   s: 'chick',
   t: 'pig',
@@ -137,17 +137,17 @@ export const LETTER_ANIMAL_SOUND_MAP = {
   v: 'cat',
   w: 'sheep',
   x: 'cat',
-  y: 'pig',
+  y: 'monkey',
   z: 'sheep',
 };
 /** 向後相容別名 */
 export const LETTER_CAT_SOUND_MAP = LETTER_ANIMAL_SOUND_MAP;
 
 /**
- * 依字母取得固定配置的可愛動物叫聲音效名稱（cat, dog, sheep, pig, bird, chick）。
+ * 依字母取得固定配置的可愛動物叫聲音效名稱（cat, dog, sheep, pig, bird, chick, monkey）。
  * 相同字母（不區分大小寫）永遠對應至同一款固定配置的動物叫聲。
  * @param {string} letter
- * @returns {string} 'cat' | 'dog' | 'sheep' | 'pig' | 'bird' | 'chick'
+ * @returns {string} 'cat' | 'dog' | 'sheep' | 'pig' | 'bird' | 'chick' | 'monkey'
  */
 export function getAnimalSoundForLetter(letter) {
   if (!letter || typeof letter !== 'string') return ANIMAL_SOUNDS[0];
@@ -169,7 +169,7 @@ function animalAudioUrl(animalName) {
 const catAudioUrl = animalAudioUrl;
 
 /**
- * 預載所有可愛動物叫聲檔案（cat, dog, sheep, pig, bird, chick）。
+ * 預載所有可愛動物叫聲檔案（cat, dog, sheep, pig, bird, chick, monkey）。
  * @returns {void}
  */
 export function preloadAnimalAudio() {
@@ -578,10 +578,10 @@ export function playPopSound() {
 }
 
 /**
- * 播放指定字母固定配置的可愛動物叫聲（貓、狗、羊、豬、鳥、小雞）。
+ * 播放指定字母固定配置的可愛動物叫聲（貓、狗、羊、豬、鳥、小雞、小猴子）。
  * 相同字母固定配置相同音效；具備快速打斷前一聲（單音軌俐落切換）與 setSoundEnabled 檢查。
  * @param {string} [letter] 點擊或填入的字母（如 'a', 'b', 'c' 等）
- * @returns {string|null} 回傳播放的動物音效名稱（cat, dog, sheep, pig, bird, chick），未播放或靜音時回傳 null
+ * @returns {string|null} 回傳播放的動物音效名稱（cat, dog, sheep, pig, bird, chick, monkey），未播放或靜音時回傳 null
  */
 export function playAnimalSoundForLetter(letter) {
   if (!soundEnabled) return null;
@@ -608,7 +608,7 @@ export function playAnimalSoundForLetter(letter) {
 export const playCatSoundForLetter = playAnimalSoundForLetter;
 
 /**
- * 隨機播放一種可愛動物叫聲（貓、狗、羊、豬、鳥、小雞）。若傳入 letter 則播放該字母固定配置音效。
+ * 隨機播放一種可愛動物叫聲（貓、狗、羊、豬、鳥、小雞、小猴子）。若傳入 letter 則播放該字母固定配置音效。
  * 具備快速打斷前一聲（單音軌俐落切換）與 setSoundEnabled 檢查。
  * @param {string} [letter]
  * @returns {string|null} 回傳播放的動物音效名稱，未播放或靜音時回傳 null

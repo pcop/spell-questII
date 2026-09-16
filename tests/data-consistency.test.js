@@ -138,9 +138,9 @@ describe('data-consistency: 每個 phonics chunk 都應該有對應的 phonics-a
 });
 
 describe('data-consistency: animal-sfx 音檔必須存在且非空', () => {
-  it('public/animal-sfx/ 下的 cat, dog, sheep, pig, bird, chick.mp3 均存在且大小大於 0', () => {
+  it('public/animal-sfx/ 下的 cat, dog, sheep, pig, bird, chick, monkey.mp3 均存在且大小大於 0', () => {
     const animalSfxDir = path.join(__dirname, '../public/animal-sfx');
-    const animals = ['cat', 'dog', 'sheep', 'pig', 'bird', 'chick'];
+    const animals = ['cat', 'dog', 'sheep', 'pig', 'bird', 'chick', 'monkey'];
     animals.forEach((name) => {
       const p = path.join(animalSfxDir, `${name}.mp3`);
       expect(fs.existsSync(p), `缺少 ${name}.mp3`).toBe(true);

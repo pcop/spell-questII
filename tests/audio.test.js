@@ -221,6 +221,13 @@ describe('setSoundEnabled 影響合成音效', () => {
     expect(sound1).toBe(audio.getAnimalSoundForLetter('b'));
 
     // 3. 測試 26 個英文字母皆有合法配置且相同字母必定相同
+    expect(audio.ANIMAL_SOUNDS).toHaveLength(7);
+    expect(audio.ANIMAL_SOUNDS).toContain('monkey');
+    expect(audio.getAnimalSoundForLetter('m')).toBe('monkey');
+    expect(audio.getAnimalSoundForLetter('h')).toBe('monkey');
+    expect(audio.getAnimalSoundForLetter('k')).toBe('monkey');
+    expect(audio.getAnimalSoundForLetter('y')).toBe('monkey');
+
     'abcdefghijklmnopqrstuvwxyz'.split('').forEach((ch) => {
       const s = audio.getAnimalSoundForLetter(ch);
       expect(audio.ANIMAL_SOUNDS).toContain(s);
@@ -527,12 +534,13 @@ describe('preloadEntryAudio', () => {
     expect(count).toBe(1);
   });
 
-  it('preloadAnimalAudio 預載 6 種動物音效（含相容 preloadCatAudio）', async () => {
+  it('preloadAnimalAudio 預載 7 種動物音效（含 monkey 與相容 preloadCatAudio）', async () => {
     installBrowserMocks();
     const audio = await freshAudioModule();
 
     audio.preloadAnimalAudio();
     const loadedSrcs = MockAudio.instances.map((a) => a.src);
+    expect(audio.ANIMAL_SOUNDS).toHaveLength(7);
     audio.ANIMAL_SOUNDS.forEach((name) => {
       expect(loadedSrcs).toContain(`/animal-sfx/${name}.mp3`);
     });
