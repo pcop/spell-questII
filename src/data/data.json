@@ -129,7 +129,10 @@
     { "id": "other_drawing",    "word": "drawing",    "theme": "other", "emoji": "🎨", "zh": "畫畫", "syllables": ["draw", "ing"], "phonics": { "chunks": ["d", "r", "aw", "i", "n", "g"], "silent": [] } },
     { "id": "other_erasing",    "word": "erasing",    "theme": "other", "emoji": "🧹", "zh": "擦掉", "syllables": ["e", "ras", "ing"], "phonics": { "chunks": ["e", "r", "a", "s", "i", "n", "g"], "silent": [] } },
     { "id": "other_talking",    "word": "talking",    "theme": "other", "emoji": "🗣️", "zh": "講話", "syllables": ["talk", "ing"], "phonics": { "chunks": ["t", "a", "l", "k", "i", "n", "g"], "silent": [2] } },
-    { "id": "other_gluing",     "word": "gluing",     "theme": "other", "emoji": "🧴", "zh": "黏貼", "syllables": ["glu", "ing"], "phonics": { "chunks": ["g", "l", "u", "i", "n", "g"], "silent": [] } }
+    { "id": "other_gluing",     "word": "gluing",     "theme": "other", "emoji": "🧴", "zh": "黏貼", "syllables": ["glu", "ing"], "phonics": { "chunks": ["g", "l", "u", "i", "n", "g"], "silent": [] } },
+    { "id": "other_jumping",    "word": "jumping",    "theme": "other", "emoji": "🦘", "zh": "跳躍", "syllables": ["jump", "ing"], "phonics": { "chunks": ["j", "u", "m", "p", "i", "n", "g"], "silent": [] } },
+    { "id": "other_crayons",    "word": "crayons",    "theme": "other", "emoji": "🖍️", "zh": "蠟筆", "syllables": ["cray", "ons"], "phonics": { "chunks": ["c", "r", "ay", "o", "n", "s"], "silent": [] } },
+    { "id": "other_walking",    "word": "walking",    "theme": "other", "emoji": "🚶", "zh": "走路", "syllables": ["walk", "ing"], "phonics": { "chunks": ["w", "a", "l", "k", "i", "n", "g"], "silent": [2] } }
   ],
   "themes": [
     { "id": "animals", "name": "動物",    "icon": "🐾",  "color": "#ffb703" },
@@ -151,7 +154,7 @@
           "id": "phonics_review_1",
           "label": "Phonics複習1",
           "distractorCount": 2,
-          "wordIds": ["other_game", "other_name", "other_cane", "other_lane", "other_case", "other_vase", "other_date", "other_gate", "number_nine", "other_line", "other_pine", "other_bike", "other_time", "other_hike", "other_lime", "other_coloring", "other_counting", "other_cutting", "other_drawing", "other_erasing", "other_talking", "other_gluing"]
+          "wordIds": ["other_game", "other_name", "other_cane", "other_lane", "other_case", "other_vase", "other_date", "other_gate", "number_nine", "other_line", "other_pine", "other_bike", "other_time", "other_hike", "other_lime", "other_coloring", "other_counting", "other_cutting", "other_drawing", "other_erasing", "other_talking", "other_gluing", "other_jumping", "other_crayons", "other_walking"]
         }
       ]
     }
