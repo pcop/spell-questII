@@ -928,6 +928,15 @@ body {
   animation: celebrateCorrect 1.4s ease;
   transform-origin: center center;
 }
+/* 每答對五題超狂大招特寫：移至畫面正中央、金色光暈爆發、騰空 720 度翻滾迴旋 */
+.mascot.celebrate-super {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  animation: celebrateSuperSpin 1.6s cubic-bezier(0.22, 1, 0.36, 1);
+  transform-origin: center center;
+  filter: drop-shadow(0 0 25px rgba(255, 215, 0, 0.95)) drop-shadow(0 0 45px rgba(255, 107, 74, 0.85));
+}
 .mascot.cheer { animation: cheer 0.6s ease; }
 .mascot.tilt-left { animation: tiltLeft 1s ease; }
 .mascot.tilt-right { animation: tiltRight 1s ease; }
@@ -1054,7 +1063,7 @@ body {
 
 /* ==========================================================================
    Animations
-   注意：celebrateCorrect / cheer / tiltLeft / tiltRight / idlePulse 這五個
+   注意：celebrateCorrect / celebrateSuperSpin / cheer / tiltLeft / tiltRight / idlePulse 這六個
    關鍵影格名稱是 mascot.js 用 e.animationName 精準比對字串來判斷動畫播完，
    絕對不能改名，且必須是真的 @keyframes animation（不能改成 transition）。
    ========================================================================== */
@@ -1088,6 +1097,27 @@ body {
   15% { transform: translate(-50%, -50%) scale(var(--celebrate-scale, 4)) rotateY(0deg); }
   85% { transform: translate(-50%, -50%) scale(var(--celebrate-scale, 4)) rotateY(360deg); }
   100% { transform: translate(-50%, -50%) scale(1) rotateY(360deg); }
+}
+/* 每答對五題超狂大招：騰空躍起高翻、空中 720 度旋轉翻滾 + 3D 翻面，最後平穩落地回到正面 */
+@keyframes celebrateSuperSpin {
+  0% {
+    transform: translate(-50%, -50%) scale(1) rotate(0deg) rotateY(0deg);
+  }
+  15% {
+    transform: translate(-50%, -120%) scale(var(--celebrate-scale, 4.5)) rotate(180deg) rotateY(90deg);
+  }
+  45% {
+    transform: translate(-50%, -150%) scale(var(--celebrate-scale, 4.5)) rotate(360deg) rotateY(180deg);
+  }
+  75% {
+    transform: translate(-50%, -80%) scale(var(--celebrate-scale, 4.5)) rotate(540deg) rotateY(270deg);
+  }
+  88% {
+    transform: translate(-50%, -50%) scale(var(--celebrate-scale, 4.5)) rotate(720deg) rotateY(360deg);
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1) rotate(720deg) rotateY(360deg);
+  }
 }
 @keyframes cheer {
   0%, 100% { transform: rotate(0deg) scale(1); }

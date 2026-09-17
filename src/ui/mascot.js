@@ -107,7 +107,7 @@ export function mascotReact(kind) {
   // 待機動畫的 tilt-left/tilt-right/pulse 也要一併清掉：待機動畫背景每 6~12
   // 秒觸發一次，若反應動畫剛好疊到（class 特異度相同、後宣告者蓋過先宣告者），
   // 反應動畫會被待機動畫吃掉。
-  mascot.classList.remove('celebrate-correct', 'cheer', 'tilt-left', 'tilt-right', 'pulse');
+  mascot.classList.remove('celebrate-correct', 'celebrate-super', 'cheer', 'tilt-left', 'tilt-right', 'pulse');
   const mascotWrap = $('mascot-wrap');
   if (mascotWrap) mascotWrap.classList.remove('celebrating');
   void mascot.offsetWidth;
@@ -126,7 +126,7 @@ export function mascotReactCorrect() {
   clearTimeout(mascotBubbleTimer);
   const bubble = $('mascot-bubble');
   if (bubble) bubble.hidden = true;
-  mascot.classList.remove('tilt-left', 'tilt-right', 'pulse', 'celebrate-correct');
+  mascot.classList.remove('tilt-left', 'tilt-right', 'pulse', 'celebrate-correct', 'celebrate-super');
   if (mascotWrap) mascotWrap.classList.add('celebrating');
   void mascot.offsetWidth;
   const scale = 3 + Math.random() * 2;
@@ -149,12 +149,35 @@ export function mascotReactCorrectEmotion() {
   clearTimeout(mascotBubbleTimer);
   const bubble = $('mascot-bubble');
   if (bubble) bubble.hidden = true;
-  mascot.classList.remove('tilt-left', 'tilt-right', 'pulse', 'celebrate-correct');
+  mascot.classList.remove('tilt-left', 'tilt-right', 'pulse', 'celebrate-correct', 'celebrate-super');
   if (mascotWrap) mascotWrap.classList.add('celebrating');
   void mascot.offsetWidth;
   const scale = 3 + Math.random() * 2;
   mascot.style.setProperty('--celebrate-scale', scale.toFixed(2));
   mascot.classList.add('celebrate-correct');
+}
+
+/**
+ * 每答對五題里程碑的大招反應：
+ * 吉祥物移到畫面正中央、金光氣場爆發、騰空 720 度大翻滾迴旋，並彈出里程碑慶祝泡泡！
+ * @param {number} [score=5] 當前累計答對題數
+ * @returns {void}
+ */
+export function mascotReactSuperMilestone(score = 5) {
+  const mascot = $('mascot');
+  const mascotWrap = $('mascot-wrap');
+  if (!mascot) return;
+  pickMascotExpression(['laughing', 'winking']);
+  clearTimeout(mascotBubbleTimer);
+  const bubble = $('mascot-bubble');
+  if (bubble) bubble.hidden = true;
+  mascot.classList.remove('tilt-left', 'tilt-right', 'pulse', 'celebrate-correct', 'celebrate-super');
+  if (mascotWrap) mascotWrap.classList.add('celebrating');
+  void mascot.offsetWidth;
+  const scale = 4.2 + Math.random() * 1.2;
+  mascot.style.setProperty('--celebrate-scale', scale.toFixed(2));
+  mascot.classList.add('celebrate-super');
+  showMascotBubble(`🔥 答對 ${score} 題大突破！太神啦！🚀`);
 }
 
 /**
@@ -215,7 +238,13 @@ export function mascotIdleTilt() {
   const mascot = $('mascot');
   if (!mascot) return;
   // 正在播答對/過關動畫時跳過，避免動畫互相打架
-  if (mascot.classList.contains('celebrate-correct') || mascot.classList.contains('cheer')) return;
+  if (
+    mascot.classList.contains('celebrate-correct') ||
+    mascot.classList.contains('celebrate-super') ||
+    mascot.classList.contains('cheer')
+  ) {
+    return;
+  }
   pickMascotExpression(['neutral', 'thinking']);
   mascot.classList.remove('tilt-left', 'tilt-right', 'pulse');
   void mascot.offsetWidth;
@@ -244,12 +273,12 @@ function bindMascotAnimationEnd() {
   const mascot = $('mascot');
   if (!mascot) return;
   animationEndBound = true;
-  // 動畫結束後移回待機狀態，避免 mascot 卡在 celebrate-correct/cheer/tilt
-  // 姿勢不再回到待機；celebrate-correct 結束時另外要把 wrapper 借來的高
+  // 動畫結束後移回待機狀態，避免 mascot 卡在 celebrate-correct/celebrate-super/cheer/tilt
+  // 姿勢不再回到待機；celebrate-correct/celebrate-super 結束時另外要把 wrapper 借來的高
   // z-index 收回，不然吉祥物待機時也會一直蓋在最上層。
   mascot.addEventListener('animationend', (e) => {
-    if (e.animationName === 'celebrateCorrect') {
-      e.target.classList.remove('celebrate-correct');
+    if (e.animationName === 'celebrateCorrect' || e.animationName === 'celebrateSuperSpin') {
+      e.target.classList.remove('celebrate-correct', 'celebrate-super');
       const mascotWrap = $('mascot-wrap');
       if (mascotWrap) mascotWrap.classList.remove('celebrating');
     } else if (e.animationName === 'cheer') {

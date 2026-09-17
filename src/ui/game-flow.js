@@ -58,6 +58,7 @@ import {
   playCorrectSound,
   playWrongSound,
   playStarPopSound,
+  playMilestoneFanfareSound,
   playPopSound,
   playRandomAnimalSound,
   playAnimalSoundForLetter,
@@ -808,13 +809,22 @@ function runCheckAnswer() {
 
 function handleCorrect(entry) {
   uiScore++;
-  $('game-score').textContent = '✅ ' + uiScore;
+  const scoreEl = $('game-score');
+  if (scoreEl) scoreEl.textContent = '✅ ' + uiScore;
   document.querySelectorAll('.answer-slot').forEach((s) => s.classList.add('correct-flash'));
   const msg = $('feedback-message');
   msg.textContent = pickRandom(messages.praise);
   msg.className = 'feedback-message correct';
   playCorrectSound();
-  mascot.mascotReactCorrectEmotion();
+
+  // 每答對五題觸發里程碑超狂大招（720度空中翻滾 + 金光氣場 + 歡慶音效 + 專屬泡泡）
+  if (uiScore > 0 && uiScore % 5 === 0) {
+    playMilestoneFanfareSound();
+    mascot.mascotReactSuperMilestone(uiScore);
+  } else {
+    mascot.mascotReactCorrectEmotion();
+  }
+
   // 進得了拼字關卡就代表 three.js 已經確認可用（見「開始遊戲」的硬性門檻
   // 檢查），呼叫這裡純粹沿用一代寫法，不特別防禦。
   celebrateCorrect();

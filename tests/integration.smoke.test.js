@@ -246,4 +246,47 @@ describe('Phase 1 整合 smoke test（主線流程）', () => {
     expect(bubble).toBeTruthy();
     expect(bubble.textContent).toMatch(/歡迎回來/);
   });
+
+  it('每答對 5 題時觸發吉祥物特殊大招（celebrate-super 與專屬突破對話泡泡）', async () => {
+    loadIndexHtmlIntoDocument();
+    const { bindStaticEvents } = await import('../src/ui/index.js');
+    const { initGameFlow, startLevelAndShow } = await import('../src/ui/game-flow.js');
+    bindStaticEvents();
+    await initGameFlow();
+    await flush();
+
+    startLevelAndShow('animals', '1');
+
+    for (let q = 0; q < 5; q++) {
+      const zhText = document.getElementById('prompt-zh').textContent.trim();
+      const entry = wordBankData.wordBank.find((w) => w.zh === zhText);
+      expect(entry).toBeTruthy();
+
+      for (const letter of entry.word) {
+        const tileBtn = Array.from(document.querySelectorAll('#tile-area .letter-tile')).find(
+          (b) => !b.disabled && b.textContent === letter
+        );
+        expect(tileBtn).toBeTruthy();
+        tileBtn.dispatchEvent(new PointerEvent('pointerdown', { pointerId: 1, clientX: 0, clientY: 0 }));
+        tileBtn.dispatchEvent(new PointerEvent('pointerup', { pointerId: 1, clientX: 0, clientY: 0 }));
+      }
+      await flush();
+
+      const mascotEl = document.getElementById('mascot');
+      const bubble = document.getElementById('mascot-bubble');
+
+      if (q < 4) {
+        // 1~4 題一般答對，不帶有 celebrate-super
+        expect(mascotEl.classList.contains('celebrate-super')).toBe(false);
+        const btnNext = document.getElementById('btn-next-question');
+        btnNext.click();
+        await flush();
+      } else {
+        // 第 5 題（q === 4），觸發滿五題特殊大招！
+        expect(mascotEl.classList.contains('celebrate-super')).toBe(true);
+        expect(bubble).toBeTruthy();
+        expect(bubble.textContent).toMatch(/答對 5 題大突破/);
+      }
+    }
+  });
 });

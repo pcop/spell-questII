@@ -549,6 +549,16 @@ export function playStarPopSound() {
   playTone(1046.5, 0.14, 0);
 }
 
+/** 每答對五題里程碑的大招慶祝音效（Web Audio 歡快升調琶音）。 @returns {void} */
+export function playMilestoneFanfareSound() {
+  if (!soundEnabled) return;
+  initAudioContext();
+  playTone(523.25, 0.10, 0);
+  playTone(659.25, 0.10, 0.08);
+  playTone(783.99, 0.10, 0.16);
+  playTone(1046.50, 0.22, 0.24);
+}
+
 /** 點擊或填入字母小怪獸時的卡通泡泡彈跳音效（Web Audio）。 @returns {void} */
 export function playPopSound() {
   if (!soundEnabled || !audioCtx) return;
