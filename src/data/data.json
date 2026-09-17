@@ -151,7 +151,7 @@
           "id": "phonics_review_1",
           "label": "Phonics複習1",
           "distractorCount": 2,
-          "wordIds": ["other_cake", "other_bake", "other_lake", "other_rake", "other_tape", "other_cave", "other_cape", "other_wave", "other_game", "other_name", "other_cane", "other_lane", "other_case", "other_vase", "other_date", "other_gate", "number_nine", "other_line", "other_pine", "other_bike", "other_time", "other_hike", "other_lime", "other_coloring", "other_counting", "other_cutting", "other_drawing", "other_erasing", "other_talking", "other_gluing"]
+          "wordIds": ["other_game", "other_name", "other_cane", "other_lane", "other_case", "other_vase", "other_date", "other_gate", "number_nine", "other_line", "other_pine", "other_bike", "other_time", "other_hike", "other_lime", "other_coloring", "other_counting", "other_cutting", "other_drawing", "other_erasing", "other_talking", "other_gluing"]
         }
       ]
     }
