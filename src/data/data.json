@@ -155,6 +155,12 @@
           "label": "Phonics複習1",
           "distractorCount": 2,
           "wordIds": ["other_game", "other_name", "other_cane", "other_lane", "other_case", "other_vase", "other_date", "other_gate", "number_nine", "other_line", "other_pine", "other_bike", "other_time", "other_hike", "other_lime", "other_coloring", "other_counting", "other_cutting", "other_drawing", "other_erasing", "other_talking", "other_gluing", "other_jumping", "other_crayons", "other_walking"]
+        },
+        {
+          "id": "phonics_review_2",
+          "label": "Phonics複習2",
+          "distractorCount": 2,
+          "wordIds": ["other_cutting", "other_talking", "other_walking", "other_erasing", "other_gluing","other_drawing","other_jumping","other_time","other_pine","other_bike","other_hike","other_counting","other_coloring","other_crayons"]
         }
       ]
     }
