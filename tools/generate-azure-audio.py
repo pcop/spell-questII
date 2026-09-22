@@ -139,15 +139,27 @@ def measure(path, what="max_volume"):
 
 
 def trailing_silence(path):
-    """尾端靜音長度。抓「後半段被淡成靜音」這類 mean_volume 看不出來的毛病。"""
+    """尾端靜音長度。抓「後半段被淡成靜音」這類 mean_volume 看不出來的毛病。
+
+    要配對 silence_start / silence_end，只有「最後一段靜音一直延續到檔尾」才算數。
+    直接取第一個 silence_start 會把音素**內部**的閉塞誤判成截斷——ŋk 的 /ŋ/→/k/、
+    ks 的 /k/→/s/ 中間本來就有 90ms 左右的無聲段，那是音素的一部分，不是毛病。
+    """
     dur = subprocess.run(["ffprobe", "-v", "error", "-show_entries", "format=duration",
                           "-of", "csv=p=0", path], capture_output=True, text=True).stdout.strip()
     res = subprocess.run(["ffmpeg", "-i", path, "-af", "silencedetect=n=-50dB:d=0.02",
                           "-f", "null", "-"], capture_output=True, text=True)
-    starts = [l.split("silence_start:")[1].strip() for l in res.stderr.splitlines()
-              if "silence_start:" in l]
+    starts, ends = [], []
+    for line in res.stderr.splitlines():
+        if "silence_start:" in line:
+            starts.append(line.split("silence_start:")[1].strip())
+        elif "silence_end:" in line:
+            ends.append(line.split("silence_end:")[1].split("|")[0].strip())
+    # 每個 silence_start 都有對應的 silence_end ⇒ 每一段靜音都在檔案中間結束了
+    if len(starts) <= len(ends):
+        return 0.0
     try:
-        return max(0.0, float(dur) - float(starts[0])) if starts else 0.0
+        return max(0.0, float(dur) - float(starts[-1]))
     except Exception:
         return 0.0
 
@@ -179,11 +191,23 @@ def post_phoneme(raw, out):
     """
     with tempfile.TemporaryDirectory() as tmp:
         wav = os.path.join(tmp, "t.wav")
+        # 尾端的殘響與淡出都在「反轉之後」處理，理由是 stop_periods 這條路走不通：
+        # 它要求連續 stop_duration 秒都低於門檻才切，而 stop_duration 必須大於音素
+        # **內部**的閉塞停頓（ŋk 的 /ŋ/→/k/、ks 的 /k/→/s/ 實測約 90ms），否則會把
+        # 音素攔腰切斷；可是門檻拉到 0.1 秒就切不掉 0.12~0.16 秒的尾端殘響了。
+        # 反轉後尾端變成開頭，用 start_periods 處理就只看開頭那一段，中間的閉塞
+        # 完全不受影響，兩個需求同時滿足。
+        #
+        # 淡出同理跟著走反轉版的淡入，**不能**用 afade=t=out:st=<絕對秒數>——那等於
+        # 「所有音檔一律在某個時間點歸零」，長一點的音素後半段會被淡成死寂
+        # （Edge-TTS 那條路上 43 個音素就是這樣只剩前 0.24 秒）。
         _ffmpeg(raw, wav, [
             "silenceremove=start_periods=1:start_duration=0.01:start_threshold=-50dB",
-            "silenceremove=stop_periods=1:stop_duration=0.1:stop_threshold=-45dB",
+            "areverse",
+            "silenceremove=start_periods=1:start_duration=0.02:start_threshold=-50dB",
+            "afade=t=in:st=0:d=0.03",
+            "areverse",
             "afade=t=in:st=0:d=0.01",
-            "areverse", "afade=t=in:st=0:d=0.03", "areverse",
         ], mp3=False)
         gain = PEAK_TARGET_DB - measure(wav)
         _ffmpeg(wav, out, [f"volume={gain:.2f}dB"])
