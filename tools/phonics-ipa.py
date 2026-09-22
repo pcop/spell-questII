@@ -174,6 +174,29 @@ CHUNK_IPA = {
     "un":        ("ʌn",     "run"),
     "up":        ("ʌp",     "cup"),
 
+
+    # ---- 第二批：多音節字的音節 onset/rime ----
+    # 多音節字的非重音音節大量是 schwa，同一個拼法在不同字裡會發不同音
+    # （en 在 pencil 是 /ɛn/、在 chicken 是 /ən/），靠 audioOverrides 分流。
+    "dr":        ("dɹə",    "子音群，帶 schwa"),
+    "gl":        ("ɡlə",    "子音群，帶 schwa"),
+    "an":        ("æn",     "banana 的 -an"),
+    "an-ng":     ("æŋ",     "mango 的 -an；n 在 g 前變 /ŋ/"),
+    "el":        ("ɛl",     "melon"),
+    "em":        ("ɛm",     "lemon"),
+    "ev":        ("ɛv",     "seven"),
+    "ick":       ("ɪk",     "chicken；跟 sick/tick 同韻"),
+    "il":        ("ɪl",     "silver"),
+    "il-schwa":  ("əl",     "pencil 的 -cil；非重音音節"),
+    "ing":       ("ɪŋ",     "-ing 後綴，7 個字共用"),
+    "ol":        ("ʌl",     "coloring 的 col-"),
+    "on":        ("ən",     "lion/lemon/melon 的非重音 -on"),
+    "ons":       ("ənz",    "crayons"),
+    "ount":      ("aʊnt",   "counting"),
+    "ut":        ("ʌt",     "cutting"),
+    "a-schwa":   ("ə",      "非重音音節的 a（zebra/banana/koala）"),
+    "en-schwa":  ("ən",     "非重音音節的 en（seven/chicken）"),
+
     # ---- 別名：英語疊字只發一個音 ----
     "ck":        ("kə",   "= k"),
     "ll":        ("l",    "= l"),

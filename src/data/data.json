@@ -93,10 +93,11 @@
         "chunks": [
           "l",
           "i",
-          "o",
-          "n"
+          "on"
         ],
-        "silent": []
+        "audioOverrides": {
+          "1": "y-long-i"
+        }
       }
     },
     {
@@ -178,11 +179,13 @@
         "chunks": [
           "z",
           "e",
-          "b",
-          "r",
+          "br",
           "a"
         ],
-        "silent": []
+        "audioOverrides": {
+          "1": "y",
+          "3": "a-schwa"
+        }
       }
     },
     {
@@ -202,7 +205,9 @@
           "g",
           "er"
         ],
-        "silent": []
+        "audioOverrides": {
+          "1": "y-long-i"
+        }
       }
     },
     {
@@ -237,7 +242,11 @@
           "l",
           "a"
         ],
-        "silent": []
+        "audioOverrides": {
+          "1": "oa",
+          "2": "o",
+          "4": "a-schwa"
+        }
       }
     },
     {
@@ -442,12 +451,10 @@
       "phonics": {
         "chunks": [
           "s",
-          "i",
-          "l",
+          "il",
           "v",
           "er"
-        ],
-        "silent": []
+        ]
       }
     },
     {
@@ -554,7 +561,10 @@
           "r",
           "o"
         ],
-        "silent": []
+        "audioOverrides": {
+          "1": "i",
+          "3": "oa"
+        }
       }
     },
     {
@@ -583,12 +593,12 @@
       "phonics": {
         "chunks": [
           "s",
-          "e",
-          "v",
-          "e",
-          "n"
+          "ev",
+          "en"
         ],
-        "silent": []
+        "audioOverrides": {
+          "2": "on"
+        }
       }
     },
     {
@@ -635,7 +645,10 @@
           "w",
           "i"
         ],
-        "silent": []
+        "audioOverrides": {
+          "1": "y",
+          "3": "y"
+        }
       }
     },
     {
@@ -673,12 +686,9 @@
       "phonics": {
         "chunks": [
           "l",
-          "e",
-          "m",
-          "o",
-          "n"
-        ],
-        "silent": []
+          "em",
+          "on"
+        ]
       }
     },
     {
@@ -694,12 +704,9 @@
       "phonics": {
         "chunks": [
           "m",
-          "e",
-          "l",
-          "o",
-          "n"
-        ],
-        "silent": []
+          "el",
+          "on"
+        ]
       }
     },
     {
@@ -741,12 +748,14 @@
       "phonics": {
         "chunks": [
           "m",
-          "a",
-          "n",
+          "an",
           "g",
           "o"
         ],
-        "silent": []
+        "audioOverrides": {
+          "1": "an-ng",
+          "3": "oa"
+        }
       }
     },
     {
@@ -762,11 +771,13 @@
       "phonics": {
         "chunks": [
           "ch",
-          "e",
-          "rr",
+          "er",
+          "r",
           "y"
         ],
-        "silent": []
+        "audioOverrides": {
+          "1": "e"
+        }
       }
     },
     {
@@ -785,11 +796,13 @@
           "b",
           "a",
           "n",
-          "a",
-          "n",
+          "an",
           "a"
         ],
-        "silent": []
+        "audioOverrides": {
+          "1": "a-schwa",
+          "4": "a-schwa"
+        }
       }
     },
     {
@@ -987,13 +1000,13 @@
       "phonics": {
         "chunks": [
           "p",
-          "e",
-          "n",
+          "en",
           "c",
-          "i",
-          "l"
+          "il"
         ],
-        "silent": []
+        "audioOverrides": {
+          "3": "il-schwa"
+        }
       }
     },
     {
@@ -1267,10 +1280,11 @@
           "ch",
           "i",
           "ck",
-          "e",
-          "n"
+          "en"
         ],
-        "silent": []
+        "audioOverrides": {
+          "3": "on"
+        }
       }
     },
     {
@@ -1707,14 +1721,13 @@
       "phonics": {
         "chunks": [
           "c",
-          "o",
-          "l",
+          "ol",
           "or",
-          "i",
-          "n",
-          "g"
+          "ing"
         ],
-        "silent": []
+        "audioOverrides": {
+          "2": "er"
+        }
       }
     },
     {
@@ -1730,14 +1743,9 @@
       "phonics": {
         "chunks": [
           "c",
-          "ou",
-          "n",
-          "t",
-          "i",
-          "n",
-          "g"
-        ],
-        "silent": []
+          "ount",
+          "ing"
+        ]
       }
     },
     {
@@ -1753,14 +1761,10 @@
       "phonics": {
         "chunks": [
           "c",
-          "u",
+          "ut",
           "t",
-          "t",
-          "i",
-          "n",
-          "g"
-        ],
-        "silent": []
+          "ing"
+        ]
       }
     },
     {
@@ -1775,14 +1779,10 @@
       ],
       "phonics": {
         "chunks": [
-          "d",
-          "r",
+          "dr",
           "aw",
-          "i",
-          "n",
-          "g"
-        ],
-        "silent": []
+          "ing"
+        ]
       }
     },
     {
@@ -1822,15 +1822,8 @@
       "phonics": {
         "chunks": [
           "t",
-          "a",
-          "l",
-          "k",
-          "i",
-          "n",
-          "g"
-        ],
-        "silent": [
-          2
+          "alk",
+          "ing"
         ]
       }
     },
@@ -1846,14 +1839,13 @@
       ],
       "phonics": {
         "chunks": [
-          "g",
-          "l",
+          "gl",
           "u",
-          "i",
-          "n",
-          "g"
+          "ing"
         ],
-        "silent": []
+        "audioOverrides": {
+          "1": "oo"
+        }
       }
     },
     {
@@ -1869,14 +1861,9 @@
       "phonics": {
         "chunks": [
           "j",
-          "u",
-          "m",
-          "p",
-          "i",
-          "n",
-          "g"
-        ],
-        "silent": []
+          "ump",
+          "ing"
+        ]
       }
     },
     {
@@ -1891,14 +1878,10 @@
       ],
       "phonics": {
         "chunks": [
-          "c",
-          "r",
+          "cr",
           "ay",
-          "o",
-          "n",
-          "s"
-        ],
-        "silent": []
+          "ons"
+        ]
       }
     },
     {
@@ -1914,15 +1897,8 @@
       "phonics": {
         "chunks": [
           "w",
-          "a",
-          "l",
-          "k",
-          "i",
-          "n",
-          "g"
-        ],
-        "silent": [
-          2
+          "alk",
+          "ing"
         ]
       }
     }
