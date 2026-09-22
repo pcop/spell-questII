@@ -144,8 +144,7 @@ function render(){
     const vs = r.variants.map(v=>{
       const on = chosen[r.chunk]===v.id ? 'checked' : '';
       const val = v.dim==='start' ? v.start : v.end;
-      const lbl = isAlias ? `= ${r.alias}`
-        : (v.off===0 ? `基準 ${val}s` : `${v.off>0?'+':''}${Math.round(v.off*1000)} ms → ${val}s`);
+      const lbl = isAlias ? `= ${r.alias}` : `${v.tag}　${val}s`;
       return `<div class="variant">
         <label><input type="radio" name="r_${r.chunk}" value="${v.id}" ${on}>${lbl}</label>
         <button class="play" data-src="new/${v.id}.mp3">▶</button>

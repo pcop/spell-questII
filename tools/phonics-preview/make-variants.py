@@ -54,18 +54,43 @@ def envelope(mp3):
     fr = x[:nf * n].reshape(nf, n)
     db = 20 * np.log10(np.sqrt((fr ** 2).mean(1) + 1e-12))
     zcr = (np.diff(np.sign(fr), axis=1) != 0).sum(1) / n
-    return db, zcr
+    # 500Hz 以下的能量佔比。鼻音 /m n/、邊音 /l/、濁塞音的閉塞段都是低頻主導
+    # （>90%），母音一進來就明顯掉下去——這是唯一能把濁子音跟母音分開的指標，
+    # 能量與 ZCR 對它們都分不出界線（兩邊都是濁音、都不高頻）。
+    w = np.hanning(n)
+    sp = np.abs(np.fft.rfft(fr * w, 512)) ** 2
+    freqs = np.fft.rfftfreq(512, 1 / SR)
+    low = sp[:, freqs < 500].sum(1) / (sp.sum(1) + 1e-12)
+    return db, zcr, low
 
 
 def base_end(chunk, cfg, db):
-    """基準 end：母音類用能量塌陷點，其餘沿用現值"""
+    """基準 end：母音之後若有能量塌陷（下一個子音的閉塞），切在那裡
+
+    對 start=0 的母音類這是主要判準；對 start>0 的則是安全閥——現行 end 大多
+    直接填字尾，遇到 book（/ʊ/ 在 0.02~0.12，後面 0.22 起是 /k/ 的閉塞）這種
+    就會把下一個子音整個帶進來。取兩者較早的那個。
+    """
+    # 目標含「內部閉塞」的 chunk 不能用這個判準：nk 是 /ŋk/，中間的 /ŋ/→/k/
+    # 閉塞正好是一段塌陷，套下去會把 /k/ 整個切掉，只剩鼻音。
+    if chunk in TAIL_CHUNKS:
+        return cfg["end"], "沿用現值（音素內含閉塞，塌陷判準不適用）"
+    peak = db.max(); thr = peak - 20
+    hit = None
+    # 從目標音素自己的範圍開始找——start > 0 時，全域能量峰值往往落在目標**之前**
+    # 的那個音節上（pink 的峰值在 /ɪ/、moon 在 /m/），從那裡找會抓到錯的塌陷。
+    for i in range(max(int(np.argmax(db)), int(cfg["start"] / F)), len(db)):
+        if db[i] < thr:
+            e = round(i * F, 3)
+            if e > cfg["start"] + 0.08:
+                hit = e
+            break
+    if hit is None:
+        return cfg["end"], "沿用現值"
     if chunk in VOWEL_FIRST:
-        peak = db.max(); thr = peak - 25
-        for i in range(int(np.argmax(db)), len(db)):
-            if db[i] < thr:
-                e = round(i * F, 3)
-                if e > cfg["start"] + 0.08:
-                    return e, "母音後能量塌陷"
+        return hit, "母音後能量塌陷"
+    if hit < cfg["end"]:
+        return hit, f"母音後能量塌陷（比現值 {cfg['end']} 早，下一個子音已經進來）"
     return cfg["end"], "沿用現值"
 
 
@@ -82,20 +107,32 @@ VOICELESS_ONSET = ("s", "f", "h", "k", "c", "p", "t", "sh", "th")
 TAIL_CHUNKS = {"y", "x", "nk"}
 
 
-def base_start(chunk, cfg, db, zcr):
-    """基準 start：載體字是清音開頭、且目標就是第一個母音時抓母音起點，否則沿用現值"""
+def base_start(chunk, cfg, db, zcr, low):
+    """基準 start：抓載體字裡目標母音的起點
+
+    清音開頭（s/f/h/k/p/t…）用能量＋ZCR，濁子音開頭（m/b/d/l/r/n…）用低頻
+    能量佔比——濁子音跟母音都是濁音、都不高頻，只有頻譜分佈分得開。
+    """
     if cfg["start"] <= 0:
         return 0.0, ""
     word = cfg["word"]
     if chunk in TAIL_CHUNKS:
         return cfg["start"], f"沿用現值（目標在 {word} 的字尾，不是第一個母音）"
-    if not word.startswith(VOICELESS_ONSET):
-        return cfg["start"], "沿用現值（濁子音開頭，程式分不出邊界）"
+
     peak = db.max()
-    voiced = [(db[i] > peak - 10 and zcr[i] < 0.12) for i in range(len(db))]
-    for i in range(len(voiced) - 2):
-        if voiced[i] and voiced[i + 1] and voiced[i + 2]:
-            return round(i * F, 3), f"母音起點（{word} 的子音到 {i * F:.2f}s）"
+    if word.startswith(VOICELESS_ONSET):
+        voiced = [(db[i] > peak - 10 and zcr[i] < 0.12) for i in range(len(db))]
+        for i in range(len(voiced) - 2):
+            if voiced[i] and voiced[i + 1] and voiced[i + 2]:
+                return round(i * F, 3), f"母音起點（{word} 的子音到 {i * F:.2f}s）"
+        return cfg["start"], "沿用現值（抓不到母音起點）"
+
+    # 濁子音開頭：低頻佔比首次連續兩幀掉到 88% 以下，且能量已經起來
+    for i in range(len(db) - 1):
+        if (low[i] < 0.88 and low[i + 1] < 0.88
+                and db[i] > peak - 8 and db[i + 1] > peak - 8):
+            return round(i * F, 3), (f"母音起點（{word} 的濁子音到 {i * F:.2f}s，"
+                                     f"低頻佔比 {low[i] * 100:.0f}%）")
     return cfg["start"], "沿用現值（抓不到母音起點）"
 
 
@@ -111,16 +148,42 @@ def variants_for(chunk, cfg, bstart, bend):
     """
     out = []
     if cfg["start"] > 0:
-        for o in (0.0, +0.04, -0.04):
-            st = round(bstart + o, 3)
-            if 0 <= st < bend - 0.05:
-                out.append({"dim": "start", "off": round(o, 3), "start": st, "end": bend})
+        # 程式抓的母音起點跟現行值差很多時，兩個都當候選、外加中間值——聲學指標
+        # 只能告訴你「濁子音的能量還在」，分不出「從哪裡開始聽起來已經是母音」：
+        # 濁塞音之後有一段共振峰滑向母音的過渡，量起來像母音，聽起來還是 "buh"。
+        # 實測把 start 往前移到程式建議值，開頭 40ms 的低頻佔比反而升高（moon
+        # 51.8%→71.5%、blue 35.4%→66.0%），也就是帶進了更多子音。所以不賭某一
+        # 邊，讓候選涵蓋兩端。
+        cur = cfg["start"]
+        if abs(bstart - cur) > 0.03:
+            mid = round((bstart + cur) / 2, 3)
+            # 第一個候選＝頁面的預設選取，所以放比較可信的那個：清音開頭的載體字
+            # （see/say/saw…）程式抓得準，已用過零率驗證過；濁子音開頭的則相反，
+            # 程式值實測會多帶進子音，預設維持現行值，真正的判斷交給耳朵。
+            if cfg["word"].startswith(VOICELESS_ONSET):
+                cands = [bstart, cur, mid]
+                tags = ["程式抓的母音起點", "現行值", "兩者中間"]
+            else:
+                cands = [cur, bstart, mid]
+                tags = ["現行值", "程式抓的母音起點", "兩者中間"]
+        else:
+            cands = [bstart, round(bstart + 0.04, 3), round(bstart - 0.04, 3)]
+            tags = ["基準", "晚 40ms", "早 40ms"]
+        seen = set()
+        for st, tag in zip(cands, tags):
+            st = round(st, 3)
+            if st in seen or not (0 <= st < bend - 0.05):
+                continue
+            seen.add(st)
+            out.append({"dim": "start", "off": round(st - bstart, 3), "tag": tag,
+                        "start": st, "end": bend})
     else:
-        offs = [0.0, -0.04, +0.04] if chunk in VOWEL_FIRST else [0.0, -0.06, -0.12]
-        for o in offs:
+        pairs = ([(0.0, "基準"), (-0.04, "早 40ms"), (+0.04, "晚 40ms")] if chunk in VOWEL_FIRST
+                 else [(0.0, "基準"), (-0.06, "早 60ms"), (-0.12, "早 120ms")])
+        for o, tag in pairs:
             e = round(bend + o, 3)
             if e > 0.05:
-                out.append({"dim": "end", "off": round(o, 3), "start": 0.0, "end": e})
+                out.append({"dim": "end", "off": round(o, 3), "tag": tag, "start": 0.0, "end": e})
     return out
 
 
@@ -165,9 +228,9 @@ async def main():
             continue
 
         raw = await ensure_raw(cfg["word"])
-        db, zcr = envelope(raw)
+        db, zcr, low = envelope(raw)
         bend, why_e = base_end(chunk, cfg, db)
-        bstart, why_s = base_start(chunk, cfg, db, zcr)
+        bstart, why_s = base_start(chunk, cfg, db, zcr, low)
         vs = []
         for i, v in enumerate(variants_for(chunk, cfg, bstart, bend)):
             name = f"{chunk}__v{i}"
