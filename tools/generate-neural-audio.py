@@ -13,12 +13,15 @@ generate-neural-audio.py
 import asyncio
 import json
 import os
+import shutil
 import subprocess
 import sys
 import tempfile
 import edge_tts
 
 VOICE = "en-US-JennyNeural"
+# phonics 音素統一對齊的峰值 (dBFS)。留 3dB headroom 給 mp3 編碼的 overshoot。
+PEAK_TARGET_DB = -3.0
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # 二代改成 Vite 專案結構：音檔搬到 public/（Vite 靜態資產目錄），data.json
 # 搬到 src/data/ 底下（見 規劃.md B 段、loadGameData.js）。一代這三個路徑是
@@ -98,10 +101,21 @@ CHUNK_CONFIG = {
     "ch": {"word": "chair", "start": 0.0, "end": 0.30},
     "sh": {"word": "sheep", "start": 0.0, "end": 0.35},
     "th": {"word": "think", "start": 0.0, "end": 0.30},
-    "ck": {"word": "duck", "start": 0.39, "end": 0.49},
+    # ck 在自然拼讀教學裡就是教成 /k/，而從 duck 尾端裁出來的 0.1 秒無聲爆破
+    # 不管怎麼拉音量都不會「聽起來清楚」（原本峰值 -20.6dB，放大只是放大噪音）。
+    # 直接複製 k 的成品，檔名維持 ck.mp3，前端與 data-consistency 測試都不用動。
+    "ck": {"alias": "k"},
     "wh": {"word": "white", "start": 0.0, "end": 0.30},
-    "nk": {"word": "pink", "start": 0.41, "end": 0.51},
-    "ll": {"word": "ball", "start": 0.23, "end": 0.43},
+    # nk 是 /ŋk/ 兩個音，不能像 ck 一樣別名到 k（會教錯）。原本的 0.41~0.51 只
+    # 取到尾端那一下爆破，整檔在 -50dB 門檻之下（等於沒聲音）。量 pink 的能量
+    # 包絡：0.06~0.13 是母音 /ɪ/、0.14~0.32 是鼻音 /ŋ/（能量緩降、ZCR 低）、
+    # 0.33~0.42 是閉塞、0.43~0.51 才是 /k/ 爆破，所以取 0.20~0.53 含完整 /ŋk/。
+    # 注意**不能**擴成整個 "ink" 韻腳——pink 的 chunks 是 p/i/nk，那樣播放時
+    # /ɪ/ 會被唸兩次。
+    "nk": {"word": "pink", "start": 0.20, "end": 0.53},
+    # 英語疊字只發一個音，ll 沒有理由跟 l 走不同音源（原本取自 ball 尾端，
+    # 峰值 -14.8dB 偏小，等於多養一個會出問題的檔）。
+    "ll": {"alias": "l"},
     "rr": {"word": "red", "start": 0.0, "end": 0.30},
     "pp": {"word": "pen", "start": 0.0, "end": 0.22},
     "eye": {"word": "eye", "start": 0.0, "end": 0.50},
@@ -114,8 +128,34 @@ async def generate_tts(text: str, out_path: str, rate: str = "-5%"):
     await comm.save(out_path)
 
 
+def _run_filters(src: str, dst: str, filters: list, encode_mp3: bool = True):
+    """套用一組 ffmpeg 濾鏡；dst 副檔名決定輸出格式"""
+    cmd = ["ffmpeg", "-y", "-loglevel", "error", "-i", src, "-af", ",".join(filters)]
+    if encode_mp3:
+        cmd += ["-codec:a", "libmp3lame", "-qscale:a", "2"]
+    cmd.append(dst)
+    subprocess.run(cmd, check=True)
+
+
+def measure_max_volume(path: str) -> float:
+    """使用 ffmpeg volumedetect 讀出峰值 (dBFS)；讀不到回傳 0.0"""
+    cmd = ["ffmpeg", "-i", path, "-af", "volumedetect", "-f", "null", "-"]
+    res = subprocess.run(cmd, capture_output=True, text=True)
+    for line in res.stderr.splitlines():
+        if "max_volume:" in line:
+            try:
+                return float(line.split("max_volume:")[1].replace("dB", "").strip())
+            except Exception:
+                pass
+    return 0.0
+
+
 def process_audio(raw_mp3: str, out_mp3: str, start: float = 0.0, end: float = None):
-    """使用 ffmpeg 進行精確修剪、靜音消除與淡出淡入處理"""
+    """裁切出單一 phonics 音素，去除前後靜音、淡入淡出，並把峰值拉到 PEAK_TARGET_DB
+
+    兩階段處理：先做裁切與淡化輸出成 WAV（無損中間檔），量測峰值後再套固定
+    增益並一次編成 mp3。不用兩次 mp3 編碼，0.2 秒等級的短片段經不起兩輪失真。
+    """
     filters = [
         "silenceremove=start_periods=1:start_duration=0.01:start_threshold=-50dB"
     ]
@@ -123,27 +163,41 @@ def process_audio(raw_mp3: str, out_mp3: str, start: float = 0.0, end: float = N
         filters.append(f"atrim=start={start}")
     if end is not None:
         filters.append(f"atrim=end={end}")
-    # atrim 不會重設時間戳，裁切後的片段仍帶著原始（裁切前）的 PTS；下面的 afade
-    # 是用「片段自己的時間」在算淡出視窗（st=0.2 代表片段開始後 0.2 秒），如果不先
-    # asetpts 重設成 0，st=0.2 實際比對的是原始未裁切的絕對時間。當某個 chunk 的
-    # start 裁切值 ≥ 0.24（= st + d，淡出視窗結束點）時，淡出視窗會落在保留內容的
-    # 「開始之前」，整段訊號因此被淡成完全靜音——這是實際發生過的 bug：ck/ll/nk/x/y
-    # 這 5 個 chunk（start 都在 0.25~0.30）曾經因此變成完全無聲的音檔。
+    # atrim 不會重設時間戳，裁切後的片段仍帶著原始（裁切前）的 PTS，後面所有
+    # 「用片段自己的時間」在算的濾鏡都會被帶歪，所以這裡一定要 asetpts 歸零。
     filters.append("asetpts=PTS-STARTPTS")
     filters.append("silenceremove=stop_periods=1:stop_duration=0.03:stop_threshold=-45dB")
 
-    # 微量淡出避免切斷音爆聲 (click sound)
+    # 淡入淡出避免切斷處的爆音 (click sound)。
+    #
+    # 淡出**不能**用 `afade=t=out:st=<絕對秒數>`：afade 的 st 是片段內的絕對
+    # 時間，寫死成 0.2 就代表「所有音檔一律在 0.24 秒處歸零並永遠保持靜音」，
+    # 而這批音素有 43 個長度超過 0.24 秒——它們的後半段全部被淡成 -91dB 的
+    # 死寂（ee/oo/ar/air/ear 這種長母音被砍掉近半，聽起來就是含糊、被掐斷；
+    # 短母音則連載體字的收尾子音都聽不到，例如 "at" 的 /t/）。更早之前還因為
+    # 缺 asetpts 讓 ck/ll/nk/x/y 整檔靜音，加上 asetpts 只治好了「全靜音」，
+    # 「只剩前 0.24 秒」這個更隱蔽的症狀一直活著——check_mean_volume 只抓
+    # ≤ -90dB，混著靜音尾巴的 mean 仍有 -18dB，看起來完全正常。
+    #
+    # 正確作法是讓淡出相對於**片段結尾**：反轉、淡入、再轉回來。這樣不論裁切
+    # 後長度是多少都只影響最後 30ms。
     filters.append("afade=t=in:st=0:d=0.01")
-    filters.append("afade=t=out:st=0.2:d=0.04")
+    filters.append("areverse")
+    filters.append("afade=t=in:st=0:d=0.03")
+    filters.append("areverse")
 
-    cmd = [
-        "ffmpeg", "-y", "-loglevel", "error",
-        "-i", raw_mp3,
-        "-af", ",".join(filters),
-        "-codec:a", "libmp3lame", "-qscale:a", "2",
-        out_mp3
-    ]
-    subprocess.run(cmd, check=True)
+    with tempfile.TemporaryDirectory() as tmpdir:
+        wav_tmp = os.path.join(tmpdir, "trimmed.wav")
+        _run_filters(raw_mp3, wav_tmp, filters, encode_mp3=False)
+
+        # 固定增益而不是 loudnorm：loudnorm 是為 >=3 秒的素材設計的，套在
+        # 0.1~0.5 秒的音素上打不中 LUFS 目標（實測 ck 仍停在 -24dB、ee 在
+        # -15.6dB），而且會改動長度（前後 padding），會干擾播放層的節奏控制。
+        # 這批檔真正的毛病是峰值散得太開（ck/nk/x/ll 比其他檔低 10~15dB），
+        # 對齊峰值就夠，而且長度完全不動、可預測。
+        peak = measure_max_volume(wav_tmp)
+        gain = PEAK_TARGET_DB - peak
+        _run_filters(wav_tmp, out_mp3, [f"volume={gain:.2f}dB"], encode_mp3=True)
 
 
 def process_word_audio(raw_mp3: str, out_mp3: str):
@@ -199,6 +253,37 @@ def check_mean_volume(mp3_path: str) -> float:
     return 0.0
 
 
+def probe_duration(mp3_path: str) -> float:
+    """讀出音檔總長度（秒）"""
+    cmd = ["ffprobe", "-v", "error", "-show_entries", "format=duration",
+           "-of", "csv=p=0", mp3_path]
+    res = subprocess.run(cmd, capture_output=True, text=True)
+    try:
+        return float(res.stdout.strip())
+    except Exception:
+        return 0.0
+
+
+def check_trailing_silence(mp3_path: str) -> float:
+    """回傳尾端靜音長度（秒）。0 代表全程有聲。
+
+    check_mean_volume 只能抓「整檔靜音」，抓不到「後半段被淡成靜音」——正是
+    afade 絕對時間那個 bug 能潛伏這麼久的原因（混著靜音尾巴的 mean 看起來很
+    正常）。這個檢查直接比對「有聲到哪裡」與「檔案多長」。
+    """
+    cmd = ["ffmpeg", "-i", mp3_path, "-af", "silencedetect=n=-50dB:d=0.02", "-f", "null", "-"]
+    res = subprocess.run(cmd, capture_output=True, text=True)
+    starts = [ln.split("silence_start:")[1].strip()
+              for ln in res.stderr.splitlines() if "silence_start:" in ln]
+    if not starts:
+        return 0.0
+    try:
+        voiced_end = float(starts[0])
+    except Exception:
+        return 0.0
+    return max(0.0, probe_duration(mp3_path) - voiced_end)
+
+
 async def generate_words_audio():
     os.makedirs(WORDS_DIR, exist_ok=True)
     with open(DATA_FILE, "r", encoding="utf-8") as f:
@@ -223,24 +308,51 @@ async def generate_words_audio():
                 print(f"  [{idx}/{len(words)}] ❌ {word}.mp3 錯誤: {e}")
 
 
-async def generate_phonics_audio(target_chunks=None):
-    os.makedirs(PHONICS_DIR, exist_ok=True)
+async def generate_phonics_audio(target_chunks=None, out_dir=None):
+    """生成 phonics 音素音檔
+
+    out_dir 預設寫進 public/phonics-audio/，傳別的目錄就能先生成到暫存區給人
+    試聽、確認沒問題再覆蓋正式資產（音檔是二進位，改壞了 diff 看不出來）。
+    """
+    out_dir = out_dir or PHONICS_DIR
+    os.makedirs(out_dir, exist_ok=True)
     chunks_to_gen = {k: v for k, v in CHUNK_CONFIG.items() if (target_chunks is None or k in target_chunks)}
-    print(f"\n🎧 開始產生 {len(chunks_to_gen)} 個自然拼讀音素 (phonics-audio/)...")
+    print(f"\n🎧 開始產生 {len(chunks_to_gen)} 個自然拼讀音素 -> {out_dir}")
+
+    # 別名（ck->k、ll->l）等到本體都生完再處理，才保證來源檔已經存在
+    aliases = {k: v["alias"] for k, v in chunks_to_gen.items() if "alias" in v}
+    real = {k: v for k, v in chunks_to_gen.items() if "alias" not in v}
+
+    def report(idx, total, chunk, out_file, extra=""):
+        vol = check_mean_volume(out_file)
+        tail = check_trailing_silence(out_file)
+        if vol <= -90.0:
+            print(f"  [{idx}/{total}] ⚠️ {chunk}.mp3 疑似靜音 ({vol} dB)")
+        elif tail > 0.1:
+            print(f"  [{idx}/{total}] ⚠️ {chunk}.mp3 尾端有 {tail:.2f}s 靜音（疑似被截斷）{extra}")
+        else:
+            print(f"  [{idx}/{total}] ✅ {chunk}.mp3 {extra}({vol} dB, 尾靜音 {tail:.2f}s)")
+
+    total = len(chunks_to_gen)
     with tempfile.TemporaryDirectory() as tmpdir:
-        for idx, (chunk, cfg) in enumerate(chunks_to_gen.items(), 1):
+        for idx, (chunk, cfg) in enumerate(real.items(), 1):
             raw_tmp = os.path.join(tmpdir, f"chunk_{chunk}_raw.mp3")
-            out_file = os.path.join(PHONICS_DIR, f"{chunk}.mp3")
+            out_file = os.path.join(out_dir, f"{chunk}.mp3")
             try:
                 await generate_tts(cfg["word"], raw_tmp, rate="-20%")
                 process_audio(raw_tmp, out_file, start=cfg["start"], end=cfg["end"])
-                vol = check_mean_volume(out_file)
-                if vol <= -90.0:
-                    print(f"  [{idx}/{len(chunks_to_gen)}] ⚠️ {chunk}.mp3 疑似靜音 ({vol} dB)")
-                else:
-                    print(f"  [{idx}/{len(chunks_to_gen)}] ✅ {chunk}.mp3 (源自: {cfg['word']}, {vol} dB)")
+                report(idx, total, chunk, out_file, extra=f"(源自: {cfg['word']}) ")
             except Exception as e:
-                print(f"  [{idx}/{len(chunks_to_gen)}] ❌ {chunk}.mp3 錯誤: {e}")
+                print(f"  [{idx}/{total}] ❌ {chunk}.mp3 錯誤: {e}")
+
+    for idx, (chunk, src_chunk) in enumerate(aliases.items(), len(real) + 1):
+        src_file = os.path.join(out_dir, f"{src_chunk}.mp3")
+        out_file = os.path.join(out_dir, f"{chunk}.mp3")
+        if not os.path.exists(src_file):
+            print(f"  [{idx}/{total}] ❌ {chunk}.mp3 別名來源 {src_chunk}.mp3 不存在")
+            continue
+        shutil.copyfile(src_file, out_file)
+        report(idx, total, chunk, out_file, extra=f"(= {src_chunk}) ")
 
 
 async def generate_letters_audio():
@@ -271,8 +383,15 @@ async def main():
         await generate_letters_audio()
     if run_all or "--phonics" in args:
         # 如果只傳 --phonics-missing 或特定 chunk，可彈性生成
-        target = ["q"] if "--phonics-q" in args else None
-        await generate_phonics_audio(target_chunks=target)
+        target = None
+        for a in args:
+            if a.startswith("--chunks="):
+                target = a.split("=", 1)[1].split(",")
+        out_dir = None
+        for a in args:
+            if a.startswith("--out-dir="):
+                out_dir = a.split("=", 1)[1]
+        await generate_phonics_audio(target_chunks=target, out_dir=out_dir)
     if run_all or "--words" in args:
         await generate_words_audio()
 

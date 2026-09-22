@@ -30,7 +30,24 @@ npx vitest run -t "錯題複習"                 # 依測試名稱過濾
 ```bash
 python3 tools/generate-neural-audio.py      # 全部重新生成（Edge-TTS + ffmpeg，需網路）
 ```
-全跑會覆蓋所有既有音檔，通常不要這樣做——只生成新檔案的做法是 `exec` 這支腳本的模組內容後直接呼叫 `generate_tts()` + `process_word_audio()` / `process_audio()`（腳本頂層有 `asyncio.run(main())`，要先把那兩行 strip 掉，並塞 `__file__` 進 exec 的 namespace 讓 `ROOT_DIR` 算得出來）。生成後**每個檔案都要**跑 `ffmpeg -i <f> -af volumedetect -f null - 2>&1 | grep mean_volume`，`-91.0 dB` 代表完全靜音（一代真的發生過，根因是 `atrim` 後沒 `asetpts=PTS-STARTPTS`，已修，但這個檢查留著）。
+全跑會覆蓋所有既有音檔，通常不要這樣做。phonics 支援部分生成與換輸出目錄：
+
+```bash
+python3 tools/generate-neural-audio.py --phonics --chunks=ee,oo --out-dir=/tmp/試聽
+```
+
+只生成新單字音檔的做法是 `exec` 這支腳本的模組內容後直接呼叫 `generate_tts()` + `process_word_audio()`（腳本頂層有 `asyncio.run(main())`，要先把那兩行 strip 掉，並塞 `__file__` 進 exec 的 namespace 讓 `ROOT_DIR` 算得出來）。
+
+**音檔一定要驗過兩件事**，兩個檢查都內建在腳本的輸出裡：
+
+1. `ffmpeg -i <f> -af volumedetect -f null - 2>&1 | grep mean_volume`，`-91.0 dB` 代表完全靜音（根因是 `atrim` 後沒 `asetpts=PTS-STARTPTS`，已修）。
+2. `ffmpeg -i <f> -af silencedetect=n=-50dB:d=0.02 -f null -`，比對 `silence_start` 與總長度——**尾端有大段靜音代表音檔被截斷**。只驗 mean_volume 抓不到這種情形：混著靜音尾巴的 mean 看起來完全正常，`afade` 用絕對時間寫死淡出點那個 bug（見下）就是這樣潛伏了很久。
+
+#### phonics 音檔的三個已知地雷
+
+- **`afade` 淡出絕對不能用 `t=out:st=<秒>`**。afade 的 `st` 是片段內的絕對時間，寫死 `st=0.2:d=0.04` 等於「所有音檔一律在 0.24 秒歸零並永遠保持靜音」，而 59 個音素裡有 43 個比這長——它們的後半段全被淡成 −91dB（長母音被砍掉近半、短母音連載體字的收尾子音都聽不到）。淡出要相對片段結尾：`areverse,afade=t=in:st=0:d=0.03,areverse`。
+- **音量用固定增益對齊峰值，不用 `loudnorm`**。`loudnorm` 是為 ≥3 秒素材設計的，套在 0.1～0.5 秒的音素上打不中 LUFS 目標（實測 `ck` 停在 −24dB、`ee` −15.6dB）而且會改動長度。`process_audio()` 改成兩階段：裁切淡化先輸出 WAV，量測峰值後套 `volume=<gain>dB` 並一次編成 mp3（短片段經不起兩輪 mp3 編碼）。目標 `PEAK_TARGET_DB = -3.0`。words/letters 仍用 `loudnorm`（素材夠長）。
+- **裁切視窗改了一定要用耳朵驗**。`CHUNK_CONFIG` 的 `start`/`end` 是從載體單字裡切出音素的時間窗，量測只能告訴你「有沒有被截斷」，不能告訴你「切到的是不是正確的音」。`ck`/`ll` 已改成 `{"alias": ...}` 直接複製 `k`/`l` 的成品（英語疊字只發一個音；`ck` 教學上就是 /k/），`nk` 則必須含鼻音 /ŋ/ 才聽得到，但**不能**擴成整個 "ink" 韻腳——`pink` 的 chunks 是 `p/i/nk`，那樣 /ɪ/ 會被唸兩次。
 
 ## 架構
 
@@ -97,6 +114,10 @@ key `spelling_game_progress_v2`；`loadProgress()` 讀不到時會找一代的 `
 - **不要用 ID 選擇器寫 `display`**：`#btn-next-question { display:block }` 曾經蓋過 JS 的 `hidden` 屬性讓按鈕提早出現，現在是 `:not([hidden])`
 
 設計 token 全在 `styles.css` 的 `:root`，新 UI 直接用。
+
+### phonics 逐段播放的節奏
+
+`speakPhonics` 逐段播放的節奏由 `phonicsChunkGapMs`（預設 130）/ `phonicsWordGapMs`（預設 260）控制，可用 `setPhonicsGaps()` 調整。**音檔本身不含尾端靜音**——修掉 afade bug 之前每個檔都拖著 0.2 秒以上的靜音尾巴，播放序列靠 `ended` 推進，那段空白就是當時的間隔來源；音檔修乾淨後節奏改由播放層明確控制，調快慢不用重新生成音檔。
 
 ### public/ 資產路徑
 

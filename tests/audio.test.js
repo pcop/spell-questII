@@ -150,6 +150,7 @@ async function freshAudioModule() {
 
 afterEach(() => {
   removeBrowserMocks();
+  vi.useRealTimers();
 });
 
 describe('setSoundEnabled 影響合成音效', () => {
@@ -379,6 +380,18 @@ describe('speakWord', () => {
 });
 
 describe('speakPhonics', () => {
+  // speakPhonics 在 chunk 之間插入 setTimeout 停頓（見 audio/index.js 的
+  // phonicsChunkGapMs），所以 'ended' 之後要把 timer 推完才會播下一段。
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  /** 讓某個 chunk 播完，並跑完 chunk 間隔的 timer */
+  function endChunk(el) {
+    el._emit('ended');
+    vi.runAllTimers();
+  }
+
   it('依序播放非 silent 的 chunk（可能經過 audioOverrides），最後播放整個單字', async () => {
     installBrowserMocks();
     const audio = await freshAudioModule();
@@ -397,14 +410,14 @@ describe('speakPhonics', () => {
     const pEl = MockAudio.instances[1];
 
     expect(pEl.src).toBe('/phonics-audio/f.mp3');
-    pEl._emit('ended');
+    endChunk(pEl);
 
     expect(pEl.src).toBe('/phonics-audio/l.mp3');
-    pEl._emit('ended');
+    endChunk(pEl);
 
     // index 2 的 'y' 有 override，音檔查找用 y-long-i，不是 'y'
     expect(pEl.src).toBe('/phonics-audio/y-long-i.mp3');
-    pEl._emit('ended');
+    endChunk(pEl);
 
     // 三個 chunk 播完後，播放整個單字
     expect(wEl.src).toBe('/words-audio/fly.mp3');
@@ -431,11 +444,11 @@ describe('speakPhonics', () => {
     const pEl = MockAudio.instances[1];
 
     expect(pEl.src).toBe('/phonics-audio/c.mp3');
-    pEl._emit('ended');
+    endChunk(pEl);
     expect(pEl.src).toBe('/phonics-audio/a.mp3');
-    pEl._emit('ended');
+    endChunk(pEl);
     expect(pEl.src).toBe('/phonics-audio/k.mp3');
-    pEl._emit('ended');
+    endChunk(pEl);
 
     // silent 的索引 3（'e'）被跳過，直接播整個單字
     expect(wEl.src).toBe('/words-audio/cake.mp3');
@@ -466,8 +479,57 @@ describe('speakPhonics', () => {
 
     // TTS 的 utterance 播完（onend）後才繼續下一個 chunk
     utter.onend();
+    vi.runAllTimers();
     expect(pEl.src).toBe('/phonics-audio/a.mp3');
     expect(seenChunks).toEqual([0, 1]);
+  });
+
+  it('chunk 之間留有停頓：ended 當下不會立刻換下一個 chunk，時間過了才換', async () => {
+    installBrowserMocks();
+    const audio = await freshAudioModule();
+
+    audio.speakPhonics({ word: 'cat', phonics: { chunks: ['c', 'a', 't'], silent: [] } });
+    const pEl = MockAudio.instances[1];
+    expect(pEl.src).toBe('/phonics-audio/c.mp3');
+
+    pEl._emit('ended');
+    // 停頓還沒走完，仍停在上一個 chunk（音檔本身已經沒有尾端靜音可以充當間隔）
+    expect(pEl.src).toBe('/phonics-audio/c.mp3');
+
+    vi.advanceTimersByTime(130);
+    expect(pEl.src).toBe('/phonics-audio/a.mp3');
+  });
+
+  it('setPhonicsGaps 調整後的停頓長度會生效', async () => {
+    installBrowserMocks();
+    const audio = await freshAudioModule();
+
+    audio.setPhonicsGaps(500, 900);
+    audio.speakPhonics({ word: 'cat', phonics: { chunks: ['c', 'a', 't'], silent: [] } });
+    const pEl = MockAudio.instances[1];
+
+    pEl._emit('ended');
+    vi.advanceTimersByTime(499);
+    expect(pEl.src).toBe('/phonics-audio/c.mp3');
+    vi.advanceTimersByTime(1);
+    expect(pEl.src).toBe('/phonics-audio/a.mp3');
+  });
+
+  it('播到一半重新呼叫 speakPhonics，舊序列的待處理停頓不會把舊 chunk 接下去', async () => {
+    installBrowserMocks();
+    const audio = await freshAudioModule();
+
+    audio.speakPhonics({ word: 'cat', phonics: { chunks: ['c', 'a', 't'], silent: [] } });
+    const pEl = MockAudio.instances[1];
+    pEl._emit('ended'); // 舊序列排了一個「接著播 a」的 timer
+
+    // timer 還沒觸發就整個重來
+    audio.speakPhonics({ word: 'dog', phonics: { chunks: ['d', 'o', 'g'], silent: [] } });
+    expect(pEl.src).toBe('/phonics-audio/d.mp3');
+
+    vi.runAllTimers();
+    // 舊序列的 timer 若沒被擋掉，這裡會變成 '/phonics-audio/a.mp3'
+    expect(pEl.src).toBe('/phonics-audio/d.mp3');
   });
 
   it('phonics 缺失或空 chunks 時直接退回 speakWord', async () => {

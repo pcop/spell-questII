@@ -38,6 +38,15 @@ let lastAnimalIndex = -1;
 let phonicsAudioHandlers = null; // { onEnded, onError } —— 目前掛在 phonicsAudioEl 上的那一組監聽器
 let phonicsPlaybackId = 0; // 每次呼叫 speakPhonics() 就 +1，播放序列裡每一步都檢查序號是否還是最新的
 
+// chunk 之間的停頓（毫秒）。在修掉 generate-neural-audio.py 的 afade 絕對時間
+// bug 之前，每個 phonics 音檔尾端都拖著一段被淡成靜音的尾巴（實測 0.2 秒以上），
+// 播放序列靠 `ended` 推進，那段空白就是 chunk 之間的節奏來源。音檔修乾淨之後
+// 尾端只剩 mp3 編碼 padding，chunk 會黏成一團，所以節奏改由播放層明確控制。
+let phonicsChunkGapMs = 130;
+// 最後一個 chunk 到整個單字之間停久一點，讓「c－a－t …… cat」的分段感出得來。
+let phonicsWordGapMs = 260;
+let phonicsGapTimer = null;
+
 const preloadedAudioMap = {};
 
 // ---------- 環境探測小工具 ----------
@@ -333,6 +342,10 @@ export function speakPhonics(entry, opts) {
   }
 
   const myPlaybackId = ++phonicsPlaybackId;
+  if (phonicsGapTimer !== null) {
+    clearTimeout(phonicsGapTimer);
+    phonicsGapTimer = null;
+  }
   const el = getPhonicsAudioEl();
   if (!el) {
     // 這台裝置連 Audio 都沒有 -> 沒辦法逐段播放，退而求其次唸完整單字
@@ -379,6 +392,16 @@ export function speakPhonics(entry, opts) {
     }
   }
 
+  // 排程下一步，中間留出停頓。timer 觸發時 playNext() 自己會再檢查一次
+  // myPlaybackId，所以即使期間使用者又按了一次發音鍵也不會兩條序列並行。
+  function scheduleNext(delayMs) {
+    if (phonicsGapTimer !== null) clearTimeout(phonicsGapTimer);
+    phonicsGapTimer = setTimeout(() => {
+      phonicsGapTimer = null;
+      playNext();
+    }, delayMs);
+  }
+
   function playNext() {
     if (myPlaybackId !== phonicsPlaybackId) return;
     if (idx >= chunkIndices.length) {
@@ -403,7 +426,7 @@ export function speakPhonics(entry, opts) {
       if (settled) return;
       settled = true;
       cleanup();
-      playNext();
+      scheduleNext(idx >= chunkIndices.length ? phonicsWordGapMs : phonicsChunkGapMs);
     };
     const onChunkError = () => {
       if (settled) return;
@@ -411,7 +434,7 @@ export function speakPhonics(entry, opts) {
       cleanup();
       fallbackChunkToTTS(chunkText, () => {
         if (myPlaybackId !== phonicsPlaybackId) return;
-        playNext();
+        scheduleNext(idx >= chunkIndices.length ? phonicsWordGapMs : phonicsChunkGapMs);
       });
     };
 
@@ -668,6 +691,18 @@ export function setSoundEnabled(enabled) {
  */
 export function setSpeechRate(rate) {
   if (typeof rate === 'number' && !Number.isNaN(rate)) speechRate = rate;
+}
+
+/**
+ * 設定 `speakPhonics` 逐段播放時的停頓長度（毫秒）。音檔本身不含尾端靜音，
+ * 節奏完全由這兩個值決定，所以要調快慢改這裡就好，不用重新生成音檔。
+ * @param {number} chunkGapMs - chunk 與 chunk 之間（預設 130）
+ * @param {number} [wordGapMs] - 最後一個 chunk 到整個單字之間（預設 260）
+ * @returns {void}
+ */
+export function setPhonicsGaps(chunkGapMs, wordGapMs) {
+  if (typeof chunkGapMs === 'number' && chunkGapMs >= 0) phonicsChunkGapMs = chunkGapMs;
+  if (typeof wordGapMs === 'number' && wordGapMs >= 0) phonicsWordGapMs = wordGapMs;
 }
 
 /**
