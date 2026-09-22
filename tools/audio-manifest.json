@@ -1,179 +1,614 @@
 {
- "a.mp3": {
+ "letters/a.mp3": {
+  "sig": "21ec3e064333efbf"
+ },
+ "letters/b.mp3": {
+  "sig": "69066a792ca11ace"
+ },
+ "letters/c.mp3": {
+  "sig": "8a5f254a3408a6b1"
+ },
+ "letters/d.mp3": {
+  "sig": "7f5721bfe8e59581"
+ },
+ "letters/e.mp3": {
+  "sig": "70dc1dbd830acc46"
+ },
+ "letters/f.mp3": {
+  "sig": "4bc40539bd12be56"
+ },
+ "letters/g.mp3": {
+  "sig": "01dac7a0b727c9ca"
+ },
+ "letters/h.mp3": {
+  "sig": "061f618429b1383b"
+ },
+ "letters/i.mp3": {
+  "sig": "a34ca63c73dd816c"
+ },
+ "letters/j.mp3": {
+  "sig": "71d75bcc680ed7fd"
+ },
+ "letters/k.mp3": {
+  "sig": "727d007728debdb5"
+ },
+ "letters/l.mp3": {
+  "sig": "efbffec2074867b2"
+ },
+ "letters/m.mp3": {
+  "sig": "1379650d57d29ddb"
+ },
+ "letters/n.mp3": {
+  "sig": "2975a644ac60c4b0"
+ },
+ "letters/o.mp3": {
+  "sig": "fb416bebefd3bad9"
+ },
+ "letters/p.mp3": {
+  "sig": "b53592a077c1c265"
+ },
+ "letters/q.mp3": {
+  "sig": "98525c9c73e48d82"
+ },
+ "letters/r.mp3": {
+  "sig": "684f93318e1d9f6f"
+ },
+ "letters/s.mp3": {
+  "sig": "c6f5828d721a1f6b"
+ },
+ "letters/t.mp3": {
+  "sig": "c60541cc010758b1"
+ },
+ "letters/u.mp3": {
+  "sig": "cc686f6a13435985"
+ },
+ "letters/v.mp3": {
+  "sig": "631c071a2eb0f768"
+ },
+ "letters/w.mp3": {
+  "sig": "53d3bb196d00a2d8"
+ },
+ "letters/x.mp3": {
+  "sig": "2cbf6a61998eef44"
+ },
+ "letters/y.mp3": {
+  "sig": "d02e31c045a69896"
+ },
+ "letters/z.mp3": {
+  "sig": "c8c878a7c4a801eb"
+ },
+ "phonics/a.mp3": {
   "sig": "95f57113ab35b3a3"
  },
- "air.mp3": {
+ "phonics/air.mp3": {
   "sig": "8695bb1a9e5406e2"
  },
- "ar.mp3": {
+ "phonics/ar.mp3": {
   "sig": "67232094866cedf6"
  },
- "aw.mp3": {
+ "phonics/aw.mp3": {
   "sig": "a82c61a47e56aca0"
  },
- "ay.mp3": {
+ "phonics/ay.mp3": {
   "sig": "c10c9a0a39a4f1ec"
  },
- "b.mp3": {
+ "phonics/b.mp3": {
   "sig": "e414795701ab6725"
  },
- "c.mp3": {
+ "phonics/c.mp3": {
   "sig": "ac3031105dd12276"
  },
- "ch.mp3": {
+ "phonics/ch.mp3": {
   "sig": "21d3591bb26c5b29"
  },
- "ck.mp3": {
+ "phonics/ck.mp3": {
   "sig": "ac3031105dd12276"
  },
- "d.mp3": {
+ "phonics/d.mp3": {
   "sig": "7c3f2b0527d49af7"
  },
- "e.mp3": {
+ "phonics/e.mp3": {
   "sig": "169bc82210e16f33"
  },
- "ea.mp3": {
+ "phonics/ea.mp3": {
   "sig": "d68db559445ca426"
  },
- "ear-heart.mp3": {
+ "phonics/ear-heart.mp3": {
   "sig": "67232094866cedf6"
  },
- "ear-pear.mp3": {
+ "phonics/ear-pear.mp3": {
   "sig": "8695bb1a9e5406e2"
  },
- "ear.mp3": {
+ "phonics/ear.mp3": {
   "sig": "c34c97f28f730bb8"
  },
- "ee.mp3": {
+ "phonics/ee.mp3": {
   "sig": "d68db559445ca426"
  },
- "eigh.mp3": {
+ "phonics/eigh.mp3": {
   "sig": "c10c9a0a39a4f1ec"
  },
- "er.mp3": {
+ "phonics/er.mp3": {
   "sig": "0c2c8d184efdb489"
  },
- "eye.mp3": {
+ "phonics/eye.mp3": {
   "sig": "b34c2af8ee295156"
  },
- "f.mp3": {
+ "phonics/f.mp3": {
   "sig": "d1610acf72343d8b"
  },
- "g.mp3": {
+ "phonics/g.mp3": {
   "sig": "5f24a0385e731a93"
  },
- "h.mp3": {
+ "phonics/h.mp3": {
   "sig": "e16b93f1bfea061b"
  },
- "i.mp3": {
+ "phonics/i.mp3": {
   "sig": "874f8c43775471a9"
  },
- "ir.mp3": {
+ "phonics/ir.mp3": {
   "sig": "0c2c8d184efdb489"
  },
- "j.mp3": {
+ "phonics/j.mp3": {
   "sig": "4b9f464f6f7fac3a"
  },
- "k.mp3": {
+ "phonics/k.mp3": {
   "sig": "ac3031105dd12276"
  },
- "l.mp3": {
+ "phonics/l.mp3": {
   "sig": "51ebc70501131e15"
  },
- "ll.mp3": {
+ "phonics/ll.mp3": {
   "sig": "51ebc70501131e15"
  },
- "m.mp3": {
+ "phonics/m.mp3": {
   "sig": "1a406fcab150ef3a"
  },
- "n.mp3": {
+ "phonics/n.mp3": {
   "sig": "48ed30b892e01f93"
  },
- "nk.mp3": {
+ "phonics/nk.mp3": {
   "sig": "8b617fe69f6fd63c"
  },
- "o.mp3": {
+ "phonics/o.mp3": {
   "sig": "39ed3726a1a419db"
  },
- "oa.mp3": {
+ "phonics/oa.mp3": {
   "sig": "9c1f687e3661cd83"
  },
- "oo-short.mp3": {
+ "phonics/oo-short.mp3": {
   "sig": "8b7fac7a54ea64ca"
  },
- "oo.mp3": {
+ "phonics/oo.mp3": {
   "sig": "32bf5b547e997aea"
  },
- "oor.mp3": {
+ "phonics/oor.mp3": {
   "sig": "ac692044772aaf40"
  },
- "or.mp3": {
+ "phonics/or.mp3": {
   "sig": "ac692044772aaf40"
  },
- "ou.mp3": {
+ "phonics/ou.mp3": {
   "sig": "ee6c2954d0542b40"
  },
- "our.mp3": {
+ "phonics/our.mp3": {
   "sig": "ac692044772aaf40"
  },
- "ow.mp3": {
+ "phonics/ow.mp3": {
   "sig": "ee6c2954d0542b40"
  },
- "p.mp3": {
+ "phonics/p.mp3": {
   "sig": "23882a0c22ab5e18"
  },
- "pp.mp3": {
+ "phonics/pp.mp3": {
   "sig": "23882a0c22ab5e18"
  },
- "q.mp3": {
+ "phonics/q.mp3": {
   "sig": "ff812a669a1d1b71"
  },
- "r.mp3": {
+ "phonics/r.mp3": {
   "sig": "80d6720adab43f44"
  },
- "rr.mp3": {
+ "phonics/rr.mp3": {
   "sig": "80d6720adab43f44"
  },
- "s.mp3": {
+ "phonics/s.mp3": {
   "sig": "a26fb2f1dd620d4b"
  },
- "sh.mp3": {
+ "phonics/sh.mp3": {
   "sig": "a1d0afbbd2356fd4"
  },
- "t.mp3": {
+ "phonics/t.mp3": {
   "sig": "aebdb9e4f9fc0c5f"
  },
- "th.mp3": {
+ "phonics/th.mp3": {
   "sig": "9c1c2d98856f7a50"
  },
- "u.mp3": {
+ "phonics/u.mp3": {
   "sig": "54d1a51321f69f55"
  },
- "ue.mp3": {
+ "phonics/ue.mp3": {
   "sig": "32bf5b547e997aea"
  },
- "ur.mp3": {
+ "phonics/ur.mp3": {
   "sig": "0c2c8d184efdb489"
  },
- "v.mp3": {
+ "phonics/v.mp3": {
   "sig": "574c18c1e9ad091e"
  },
- "w.mp3": {
+ "phonics/w.mp3": {
   "sig": "b453b411b5a89f42"
  },
- "wh.mp3": {
+ "phonics/wh.mp3": {
   "sig": "b453b411b5a89f42"
  },
- "x.mp3": {
+ "phonics/x.mp3": {
   "sig": "c04fe237a248824d"
  },
- "y-long-i.mp3": {
+ "phonics/y-long-i.mp3": {
   "sig": "b34c2af8ee295156"
  },
- "y.mp3": {
+ "phonics/y.mp3": {
   "sig": "d68db559445ca426"
  },
- "z.mp3": {
+ "phonics/z.mp3": {
   "sig": "daaa15585cd9e10c"
+ },
+ "words/apple.mp3": {
+  "sig": "5725c09a8bbf493c"
+ },
+ "words/arm.mp3": {
+  "sig": "55234351d37d36a0"
+ },
+ "words/bake.mp3": {
+  "sig": "8f3190b7b5804355"
+ },
+ "words/ball.mp3": {
+  "sig": "cc5883868ed1a9ff"
+ },
+ "words/banana.mp3": {
+  "sig": "b14a266745f367a1"
+ },
+ "words/bed.mp3": {
+  "sig": "21a565aea7f1aba7"
+ },
+ "words/bike.mp3": {
+  "sig": "8d147cbbddfb9f8d"
+ },
+ "words/bird.mp3": {
+  "sig": "5c7372fe0023b01c"
+ },
+ "words/black.mp3": {
+  "sig": "159058ab7591218a"
+ },
+ "words/blue.mp3": {
+  "sig": "3bf39b931f8c2cf3"
+ },
+ "words/book.mp3": {
+  "sig": "77a383b73e4ea887"
+ },
+ "words/box.mp3": {
+  "sig": "5629526596fe5254"
+ },
+ "words/brown.mp3": {
+  "sig": "f6cc425ee4ece5d3"
+ },
+ "words/cake.mp3": {
+  "sig": "c7019246aab99412"
+ },
+ "words/cane.mp3": {
+  "sig": "2410d17e5e0674ac"
+ },
+ "words/cape.mp3": {
+  "sig": "cf38defb3cf7b10d"
+ },
+ "words/case.mp3": {
+  "sig": "93ea7c61670c4061"
+ },
+ "words/cat.mp3": {
+  "sig": "826828b75e16fb23"
+ },
+ "words/cave.mp3": {
+  "sig": "ca3103ef22a8e4b4"
+ },
+ "words/chair.mp3": {
+  "sig": "53b97520eb5b275e"
+ },
+ "words/cherry.mp3": {
+  "sig": "9dee6468ed0cd2aa"
+ },
+ "words/chicken.mp3": {
+  "sig": "73269f40e8c033e7"
+ },
+ "words/climb.mp3": {
+  "sig": "6fc3911800850cbc"
+ },
+ "words/clock.mp3": {
+  "sig": "fcb5bff8a00f230d"
+ },
+ "words/coloring.mp3": {
+  "sig": "7a02ef39c19d3943"
+ },
+ "words/counting.mp3": {
+  "sig": "a2c2b022f2b86edd"
+ },
+ "words/cow.mp3": {
+  "sig": "abd5af7c91cb372c"
+ },
+ "words/crawl.mp3": {
+  "sig": "579f6348dcc30bd8"
+ },
+ "words/crayons.mp3": {
+  "sig": "f77d12217db5b01a"
+ },
+ "words/cup.mp3": {
+  "sig": "ff88bec039d7e616"
+ },
+ "words/cutting.mp3": {
+  "sig": "3ed6c3ad38a4c7d9"
+ },
+ "words/date.mp3": {
+  "sig": "0d751d9f16216e6e"
+ },
+ "words/dog.mp3": {
+  "sig": "6a905c819449e909"
+ },
+ "words/door.mp3": {
+  "sig": "4950f3bce24a1e6d"
+ },
+ "words/drawing.mp3": {
+  "sig": "39437ae5d788d013"
+ },
+ "words/duck.mp3": {
+  "sig": "62442e6382c9912c"
+ },
+ "words/ear.mp3": {
+  "sig": "e0c051f54bf1a63d"
+ },
+ "words/eat.mp3": {
+  "sig": "84bfe462afcbcfc2"
+ },
+ "words/eight.mp3": {
+  "sig": "dc074dedee0359ea"
+ },
+ "words/erasing.mp3": {
+  "sig": "129a40887d0992f2"
+ },
+ "words/eye.mp3": {
+  "sig": "63df2ae31b839556"
+ },
+ "words/five.mp3": {
+  "sig": "2b71d9b381552805"
+ },
+ "words/fly.mp3": {
+  "sig": "34ad22ace7285c48"
+ },
+ "words/foot.mp3": {
+  "sig": "745ffa781f23feee"
+ },
+ "words/four.mp3": {
+  "sig": "de5c3a64854c56a5"
+ },
+ "words/fox.mp3": {
+  "sig": "d74d9498b46507a7"
+ },
+ "words/frog.mp3": {
+  "sig": "92f70b1b468091de"
+ },
+ "words/game.mp3": {
+  "sig": "d9d10925fe5fbde5"
+ },
+ "words/gate.mp3": {
+  "sig": "b8e010c7dea3b162"
+ },
+ "words/gluing.mp3": {
+  "sig": "0ef562c9971de10d"
+ },
+ "words/goat.mp3": {
+  "sig": "f9b9dc6e7e190bc9"
+ },
+ "words/gold.mp3": {
+  "sig": "a8d9d85f61fa4365"
+ },
+ "words/grape.mp3": {
+  "sig": "62988ad1e4d2607a"
+ },
+ "words/gray.mp3": {
+  "sig": "673ca44a01282096"
+ },
+ "words/green.mp3": {
+  "sig": "6676a50111771ab9"
+ },
+ "words/hand.mp3": {
+  "sig": "a79cc0a24253d863"
+ },
+ "words/hat.mp3": {
+  "sig": "1cab7b0933239ec1"
+ },
+ "words/heart.mp3": {
+  "sig": "9969e83c9b7cc376"
+ },
+ "words/hike.mp3": {
+  "sig": "d9832e230af5b076"
+ },
+ "words/horse.mp3": {
+  "sig": "0112ccba2da68651"
+ },
+ "words/jump.mp3": {
+  "sig": "26685d41bc27c434"
+ },
+ "words/jumping.mp3": {
+  "sig": "7b7122f3bb2e70f7"
+ },
+ "words/kiwi.mp3": {
+  "sig": "8b1791a03c01272f"
+ },
+ "words/koala.mp3": {
+  "sig": "62c7b7b8e628901c"
+ },
+ "words/lake.mp3": {
+  "sig": "5268738bda86b70f"
+ },
+ "words/lane.mp3": {
+  "sig": "6d22d72757f74846"
+ },
+ "words/leg.mp3": {
+  "sig": "fac84db932267446"
+ },
+ "words/lemon.mp3": {
+  "sig": "3409a800f7cea5c4"
+ },
+ "words/lime.mp3": {
+  "sig": "561f470fec4eb727"
+ },
+ "words/line.mp3": {
+  "sig": "25ec06dd91627a0f"
+ },
+ "words/lion.mp3": {
+  "sig": "ec70f515a799a643"
+ },
+ "words/mango.mp3": {
+  "sig": "3e7692f873f6825d"
+ },
+ "words/melon.mp3": {
+  "sig": "2f599d7513d7bfc1"
+ },
+ "words/mouth.mp3": {
+  "sig": "ddaf2d2745a5815f"
+ },
+ "words/name.mp3": {
+  "sig": "6b3340110d619803"
+ },
+ "words/nine.mp3": {
+  "sig": "ff76a9dbe2e66c1c"
+ },
+ "words/nose.mp3": {
+  "sig": "9a7251790a18dc85"
+ },
+ "words/one.mp3": {
+  "sig": "c99ab414cb06776a"
+ },
+ "words/orange.mp3": {
+  "sig": "0c9f51bba4b34fec"
+ },
+ "words/owl.mp3": {
+  "sig": "2f06b1a52c0ce798"
+ },
+ "words/peach.mp3": {
+  "sig": "c2393dc446cdd4f6"
+ },
+ "words/pear.mp3": {
+  "sig": "001784d2b114c634"
+ },
+ "words/pen.mp3": {
+  "sig": "8ce30cb7622b5509"
+ },
+ "words/pencil.mp3": {
+  "sig": "4c1ee24b22c52df3"
+ },
+ "words/pig.mp3": {
+  "sig": "a2774d1ae14a922b"
+ },
+ "words/pine.mp3": {
+  "sig": "0bbee84fed8be802"
+ },
+ "words/pink.mp3": {
+  "sig": "cb285b84a16c9289"
+ },
+ "words/purple.mp3": {
+  "sig": "466e3cf37698ccf7"
+ },
+ "words/rake.mp3": {
+  "sig": "1e88cffab9421b7e"
+ },
+ "words/read.mp3": {
+  "sig": "17a5d3e93d22a7b7"
+ },
+ "words/red.mp3": {
+  "sig": "5e794fbfba93e006"
+ },
+ "words/run.mp3": {
+  "sig": "dd694e753ee88941"
+ },
+ "words/seven.mp3": {
+  "sig": "68376ef537ce8ef1"
+ },
+ "words/sheep.mp3": {
+  "sig": "cf95fd93acc27f35"
+ },
+ "words/shirt.mp3": {
+  "sig": "25c01dd4973b67ed"
+ },
+ "words/silver.mp3": {
+  "sig": "d2e35c1f5c195b6f"
+ },
+ "words/six.mp3": {
+  "sig": "3c4d319cd5f4a255"
+ },
+ "words/sleep.mp3": {
+  "sig": "f8165bf8f0b75fd1"
+ },
+ "words/sock.mp3": {
+  "sig": "b75fa2c0a585499c"
+ },
+ "words/spoon.mp3": {
+  "sig": "53c9c9de3b544a5e"
+ },
+ "words/swim.mp3": {
+  "sig": "c536570866835071"
+ },
+ "words/talking.mp3": {
+  "sig": "b00f98de385f5e51"
+ },
+ "words/tape.mp3": {
+  "sig": "a497d771f43122cb"
+ },
+ "words/teal.mp3": {
+  "sig": "8c10185ab826c0dd"
+ },
+ "words/ten.mp3": {
+  "sig": "a8d928e6e54127eb"
+ },
+ "words/three.mp3": {
+  "sig": "76321d125aec89c7"
+ },
+ "words/tiger.mp3": {
+  "sig": "e31b8a2afda20d9e"
+ },
+ "words/time.mp3": {
+  "sig": "9b427089b625307a"
+ },
+ "words/tooth.mp3": {
+  "sig": "4d53e0440ffae352"
+ },
+ "words/turtle.mp3": {
+  "sig": "9c818ec7297f74d1"
+ },
+ "words/two.mp3": {
+  "sig": "815d8490d9cfa0bf"
+ },
+ "words/vase.mp3": {
+  "sig": "5ff7e9bdf4558759"
+ },
+ "words/walk.mp3": {
+  "sig": "a7cf9bd90280d849"
+ },
+ "words/walking.mp3": {
+  "sig": "d78daea670357490"
+ },
+ "words/wave.mp3": {
+  "sig": "3e5e3490f5404b89"
+ },
+ "words/white.mp3": {
+  "sig": "dc6bf53c96ee8f6b"
+ },
+ "words/wolf.mp3": {
+  "sig": "39b63c9a5cd37aac"
+ },
+ "words/zebra.mp3": {
+  "sig": "9cd17fe3021ab7af"
+ },
+ "words/zero.mp3": {
+  "sig": "8ba2699127de7c00"
  }
 }

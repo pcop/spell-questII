@@ -20,6 +20,7 @@
         --out-dir=/tmp/試聽          # 小樣本驗證，不碰 public/
     python3 tools/generate-azure-audio.py --all        # 增量：只產生缺的或參數變了的
     python3 tools/generate-azure-audio.py --all --force # 全量重生
+    python3 tools/generate-azure-audio.py --reindex     # 只重建 manifest，不呼叫 API
 """
 
 import hashlib
@@ -253,24 +254,39 @@ def gen_one(name, ssml, out_file, post, idx, total):
         print(f"  [{idx}/{total}] ✅ {name} ({vol} dB, 尾靜音 {tail:.2f}s)")
 
 
-def run(items, out_dir, post, manifest, force, label):
-    """items: [(檔名, ssml, 指紋來源 tuple)]"""
+def run(kind, items, out_dir, post, manifest, force, label, reindex=False):
+    """items: [(檔名, ssml, 指紋來源 tuple)]
+
+    manifest 的 key 一定要帶 kind 前綴。三個目錄的檔名是會撞的——`a.mp3` 同時是
+    字母 A 與音素 /æ/，`ear.mp3`/`eye.mp3` 又同時是單字，共 28 個重名。只用檔名
+    當 key 的話它們會互相覆蓋，指紋永遠對不上，每次都被判定成「要重生」。
+    """
     os.makedirs(out_dir, exist_ok=True)
     todo = []
     for name, ssml, parts in items:
         out_file = os.path.join(out_dir, name)
         s = sig(*parts)
-        if not force and manifest.get(name, {}).get("sig") == s and os.path.exists(out_file):
+        key = f"{kind}/{name}"
+        if reindex:
+            # 只重算指紋，不呼叫 API：檔案已經在了，補回它在 manifest 裡的記錄
+            if os.path.exists(out_file):
+                manifest[key] = {"sig": s}
             continue
-        todo.append((name, ssml, s, out_file))
+        if not force and manifest.get(key, {}).get("sig") == s and os.path.exists(out_file):
+            continue
+        todo.append((key, name, ssml, s, out_file))
+
+    if reindex:
+        print(f"{label}：已重建 {len(items)} 筆索引")
+        return
 
     skipped = len(items) - len(todo)
     print(f"\n{label}：{len(todo)} 個要生成"
           + (f"，{skipped} 個沒變動（略過）" if skipped else ""))
-    for i, (name, ssml, s, out_file) in enumerate(todo, 1):
+    for i, (key, name, ssml, s, out_file) in enumerate(todo, 1):
         try:
             gen_one(name, ssml, out_file, post, i, len(todo))
-            manifest[name] = {"sig": s}
+            manifest[key] = {"sig": s}
         except Exception as e:
             print(f"  [{i}/{len(todo)}] ❌ {name}: {e}")
 
@@ -278,7 +294,11 @@ def run(items, out_dir, post, manifest, force, label):
 def main():
     args = sys.argv[1:]
     force = "--force" in args
-    run_all = not args or "--all" in args
+    # --reindex：不呼叫 API，只用現有檔案重建 manifest。修了指紋規則或手動補過
+    # 檔案之後用這個對齊，不必重新花一次合成。
+    reindex = "--reindex" in args
+    run_all = not args or "--all" in args or (reindex and not any(
+        a.startswith(("--phonics", "--words", "--letters", "--chunks=")) for a in args))
     out_dir = next((a.split("=", 1)[1] for a in args if a.startswith("--out-dir=")), None)
     only = next((a.split("=", 1)[1].split(",") for a in args if a.startswith("--chunks=")), None)
     only_words = next((a.split("=", 1)[1].split(",") for a in args if a.startswith("--words=")), None)
@@ -295,7 +315,8 @@ def main():
             items.append((f"{chunk}.mp3",
                           ssml_phoneme(ipa, fallback, PHONEME_RATE),
                           (ipa, VOICE, PHONEME_RATE, OUTPUT_FORMAT)))
-        run(items, out_dir or PHONICS_DIR, post_phoneme, manifest, force, "🎧 phonics 音素")
+        run("phonics", items, out_dir or PHONICS_DIR, post_phoneme, manifest, force,
+            "🎧 phonics 音素", reindex)
 
     if run_all or "--words" in args or only_words:
         with open(DATA_FILE, encoding="utf-8") as f:
@@ -303,13 +324,15 @@ def main():
         words = sorted({e["word"].strip().lower() for e in data["wordBank"]})
         items = [(f"{w}.mp3", ssml_text(w, WORD_RATE), (w, VOICE, WORD_RATE, OUTPUT_FORMAT))
                  for w in words if not only_words or w in only_words]
-        run(items, out_dir or WORDS_DIR, post_word, manifest, force, "🎙️ 單字")
+        run("words", items, out_dir or WORDS_DIR, post_word, manifest, force,
+            "🎙️ 單字", reindex)
 
     if run_all or "--letters" in args:
         items = [(f"{c}.mp3", ssml_text(c.upper(), LETTER_RATE),
                   (c.upper(), VOICE, LETTER_RATE, OUTPUT_FORMAT))
                  for c in "abcdefghijklmnopqrstuvwxyz"]
-        run(items, out_dir or LETTERS_DIR, post_word, manifest, force, "🔤 字母")
+        run("letters", items, out_dir or LETTERS_DIR, post_word, manifest, force,
+            "🔤 字母", reindex)
 
     if not out_dir:
         save_manifest(manifest)
