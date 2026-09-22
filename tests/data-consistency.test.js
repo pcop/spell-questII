@@ -43,6 +43,10 @@ describe('data-consistency: phonics.chunks 串接必須等於 word', () => {
       .filter((entry) => {
         const chunks = entry.phonics && entry.phonics.chunks;
         if (!Array.isArray(chunks)) return true; // 缺少必要欄位也算違規
+        // sight word 刻意不做逐段拆解（one/two/eye/eight 這類拼字與發音對不上的字），
+        // speakPhonics 遇到空 chunks 會自動退回唸整個單字。要有 sightWord 標記才算
+        // 合法，否則「忘了填 chunks」跟「刻意不拆」在資料上分不出來。
+        if (chunks.length === 0) return !entry.sightWord;
         return chunks.join('') !== entry.word;
       })
       .map((entry) => ({
@@ -50,6 +54,14 @@ describe('data-consistency: phonics.chunks 串接必須等於 word', () => {
         word: entry.word,
         chunks: entry.phonics && entry.phonics.chunks,
       }));
+
+    expect(offenders).toEqual([]);
+  });
+
+  it('標記 sightWord 的項目 chunks 必須是空的（避免標了卻還留著拆解）', () => {
+    const offenders = wordBank
+      .filter((entry) => entry.sightWord && (entry.phonics?.chunks || []).length > 0)
+      .map((entry) => ({ id: entry.id, word: entry.word, chunks: entry.phonics.chunks }));
 
     expect(offenders).toEqual([]);
   });

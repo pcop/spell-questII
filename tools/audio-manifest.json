@@ -80,20 +80,65 @@
  "phonics/a.mp3": {
   "sig": "95f57113ab35b3a3"
  },
+ "phonics/ack.mp3": {
+  "sig": "e962d9b163e25869"
+ },
  "phonics/air.mp3": {
   "sig": "8695bb1a9e5406e2"
+ },
+ "phonics/ake.mp3": {
+  "sig": "496d75c4e4f28561"
+ },
+ "phonics/alk.mp3": {
+  "sig": "f7a0f4ed28dfe736"
+ },
+ "phonics/all.mp3": {
+  "sig": "3cd9618b988f1d8a"
+ },
+ "phonics/ame.mp3": {
+  "sig": "e6d48f31b87ffb0a"
+ },
+ "phonics/and.mp3": {
+  "sig": "bfdb6519028621ae"
+ },
+ "phonics/ane.mp3": {
+  "sig": "17eeac5eb69a8d33"
+ },
+ "phonics/ape.mp3": {
+  "sig": "47c599f88438fd6d"
  },
  "phonics/ar.mp3": {
   "sig": "67232094866cedf6"
  },
+ "phonics/ase.mp3": {
+  "sig": "b8cf00c76d31f7dd"
+ },
+ "phonics/at.mp3": {
+  "sig": "1fc05ca01bc79c01"
+ },
+ "phonics/ate.mp3": {
+  "sig": "4e5c55765fcda8bd"
+ },
+ "phonics/ave.mp3": {
+  "sig": "02b4ed46056b86cc"
+ },
  "phonics/aw.mp3": {
   "sig": "a82c61a47e56aca0"
+ },
+ "phonics/awl.mp3": {
+  "sig": "3cd9618b988f1d8a"
  },
  "phonics/ay.mp3": {
   "sig": "c10c9a0a39a4f1ec"
  },
  "phonics/b.mp3": {
   "sig": "e414795701ab6725"
+ },
+ "phonics/bl.mp3": {
+  "sig": "0f7df01cfbd3d9e1"
+ },
+ "phonics/br.mp3": {
+  "sig": "8c900685c437c19c"
  },
  "phonics/c.mp3": {
   "sig": "ac3031105dd12276"
@@ -104,6 +149,12 @@
  "phonics/ck.mp3": {
   "sig": "ac3031105dd12276"
  },
+ "phonics/cl.mp3": {
+  "sig": "e80a55f41943ced6"
+ },
+ "phonics/cr.mp3": {
+  "sig": "7e1759dcbc4a4bde"
+ },
  "phonics/d.mp3": {
   "sig": "7c3f2b0527d49af7"
  },
@@ -112,6 +163,15 @@
  },
  "phonics/ea.mp3": {
   "sig": "d68db559445ca426"
+ },
+ "phonics/each.mp3": {
+  "sig": "da875f1b43f7f367"
+ },
+ "phonics/ead.mp3": {
+  "sig": "731f4c9f718d217f"
+ },
+ "phonics/eal.mp3": {
+  "sig": "ad1e92d2539cc4a7"
  },
  "phonics/ear-heart.mp3": {
   "sig": "67232094866cedf6"
@@ -122,11 +182,29 @@
  "phonics/ear.mp3": {
   "sig": "c34c97f28f730bb8"
  },
+ "phonics/eart.mp3": {
+  "sig": "bcafe36e8bf0095f"
+ },
+ "phonics/ed.mp3": {
+  "sig": "3d4511baef1abd06"
+ },
  "phonics/ee.mp3": {
   "sig": "d68db559445ca426"
  },
+ "phonics/een.mp3": {
+  "sig": "bc40af4936908f6c"
+ },
+ "phonics/eep.mp3": {
+  "sig": "a5fe6aad1af08b7c"
+ },
+ "phonics/eg.mp3": {
+  "sig": "ecea6f2d513d97ec"
+ },
  "phonics/eigh.mp3": {
   "sig": "c10c9a0a39a4f1ec"
+ },
+ "phonics/en.mp3": {
+  "sig": "7a145e09671a9390"
  },
  "phonics/er.mp3": {
   "sig": "0c2c8d184efdb489"
@@ -137,8 +215,17 @@
  "phonics/f.mp3": {
   "sig": "d1610acf72343d8b"
  },
+ "phonics/fl.mp3": {
+  "sig": "a4680ab601cefb09"
+ },
+ "phonics/fr.mp3": {
+  "sig": "8346cd66328f6a8a"
+ },
  "phonics/g.mp3": {
   "sig": "5f24a0385e731a93"
+ },
+ "phonics/gr.mp3": {
+  "sig": "b0b1d3568f46338b"
  },
  "phonics/h.mp3": {
   "sig": "e16b93f1bfea061b"
@@ -146,8 +233,44 @@
  "phonics/i.mp3": {
   "sig": "874f8c43775471a9"
  },
+ "phonics/ig.mp3": {
+  "sig": "66b707823cde664e"
+ },
+ "phonics/ike.mp3": {
+  "sig": "48b052b6344ef554"
+ },
+ "phonics/im.mp3": {
+  "sig": "f8be6f46d2262140"
+ },
+ "phonics/imb.mp3": {
+  "sig": "221bd4d5d1cc1cba"
+ },
+ "phonics/ime.mp3": {
+  "sig": "221bd4d5d1cc1cba"
+ },
+ "phonics/ine.mp3": {
+  "sig": "377c3fb898745dcc"
+ },
+ "phonics/ink.mp3": {
+  "sig": "ebdd115dd0ae0a02"
+ },
  "phonics/ir.mp3": {
   "sig": "0c2c8d184efdb489"
+ },
+ "phonics/ird.mp3": {
+  "sig": "f6b0f9c402db9cc8"
+ },
+ "phonics/irt.mp3": {
+  "sig": "f6307b70d0c82270"
+ },
+ "phonics/ite.mp3": {
+  "sig": "87226280259dd574"
+ },
+ "phonics/ive.mp3": {
+  "sig": "c02f69d99b6a7e7d"
+ },
+ "phonics/ix.mp3": {
+  "sig": "860e8473bbe595bf"
  },
  "phonics/j.mp3": {
   "sig": "4b9f464f6f7fac3a"
@@ -176,17 +299,50 @@
  "phonics/oa.mp3": {
   "sig": "9c1f687e3661cd83"
  },
+ "phonics/oat.mp3": {
+  "sig": "cb703504d48220c9"
+ },
+ "phonics/ock.mp3": {
+  "sig": "90eb37f5e6485063"
+ },
+ "phonics/og.mp3": {
+  "sig": "9778a1685086314c"
+ },
+ "phonics/old.mp3": {
+  "sig": "843b07b92596da36"
+ },
+ "phonics/olf.mp3": {
+  "sig": "2bfbb437b734729c"
+ },
  "phonics/oo-short.mp3": {
   "sig": "8b7fac7a54ea64ca"
  },
  "phonics/oo.mp3": {
   "sig": "32bf5b547e997aea"
  },
+ "phonics/ook.mp3": {
+  "sig": "95e4a80fbdecd1b1"
+ },
+ "phonics/oon.mp3": {
+  "sig": "210608b22415447d"
+ },
  "phonics/oor.mp3": {
   "sig": "ac692044772aaf40"
  },
+ "phonics/oot.mp3": {
+  "sig": "425575462da866e8"
+ },
+ "phonics/ooth.mp3": {
+  "sig": "27b30b354c4ffbe2"
+ },
  "phonics/or.mp3": {
   "sig": "ac692044772aaf40"
+ },
+ "phonics/orse.mp3": {
+  "sig": "8d9e82a68b4a4756"
+ },
+ "phonics/ose.mp3": {
+  "sig": "08b846dce34ccf83"
  },
  "phonics/ou.mp3": {
   "sig": "ee6c2954d0542b40"
@@ -194,8 +350,17 @@
  "phonics/our.mp3": {
   "sig": "ac692044772aaf40"
  },
+ "phonics/outh.mp3": {
+  "sig": "70e7322a187fd92e"
+ },
  "phonics/ow.mp3": {
   "sig": "ee6c2954d0542b40"
+ },
+ "phonics/own.mp3": {
+  "sig": "4fd110f4af91f86c"
+ },
+ "phonics/ox.mp3": {
+  "sig": "88edbfe4fd26e299"
  },
  "phonics/p.mp3": {
   "sig": "23882a0c22ab5e18"
@@ -218,17 +383,41 @@
  "phonics/sh.mp3": {
   "sig": "a1d0afbbd2356fd4"
  },
+ "phonics/sl.mp3": {
+  "sig": "1c47f17e22e329bc"
+ },
+ "phonics/sp.mp3": {
+  "sig": "7131541e288f3628"
+ },
+ "phonics/sw.mp3": {
+  "sig": "3a6db69058bd84ad"
+ },
  "phonics/t.mp3": {
   "sig": "aebdb9e4f9fc0c5f"
  },
  "phonics/th.mp3": {
   "sig": "9c1c2d98856f7a50"
  },
+ "phonics/thr.mp3": {
+  "sig": "e5d4fa798c3955f6"
+ },
  "phonics/u.mp3": {
   "sig": "54d1a51321f69f55"
  },
+ "phonics/uck.mp3": {
+  "sig": "5960c0faeb954371"
+ },
  "phonics/ue.mp3": {
   "sig": "32bf5b547e997aea"
+ },
+ "phonics/ump.mp3": {
+  "sig": "950d0de0598710b2"
+ },
+ "phonics/un.mp3": {
+  "sig": "618b7c2f1d12ffeb"
+ },
+ "phonics/up.mp3": {
+  "sig": "9175668a8f34a889"
  },
  "phonics/ur.mp3": {
   "sig": "0c2c8d184efdb489"

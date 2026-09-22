@@ -152,7 +152,13 @@ key `spelling_game_progress_v2`；`loadProgress()` 讀不到時會找一代的 `
   "phonics": { "chunks": ["j", "u", "m", "p"], "silent": [] } }
 ```
 
-- `phonics.chunks` 串接必須等於 `word`；`syllables`（選填）同理。拆法：子音群 ch/sh/th/ck/wh/nk、母音團 ee/ea/oo/ow/ou/ay/ue/eigh/oa/aw、r 控制母音 ar/er/ir/or/ur/air/ear/our/oor、疊字 ll/rr/pp 各一個 chunk；子音混合（br/pl/st）拆開。`silent` 是 chunks 的索引（silent e、`walk` 的 l）。
+- `phonics.chunks` 串接必須等於 `word`；`syllables`（選填）同理。
+
+  **單音節字用 onset-rime 拆成兩塊**：`cake` → `["c","ake"]`、`frog` → `["fr","og"]`、`duck` → `["d","uck"]`。onset 是母音前的所有子音（含子音群 bl/br/cl/cr/fl/fr/gr/sl/sp/sw/thr），rime 是從母音到字尾的全部（含 silent e）。**這樣拆之後 `silent` 欄位就不需要了**——silent e 已經併進 rime，`-ake` 整體發 /eɪk/。
+  
+  改用 onset-rime 是為了修一個教學錯誤：音素拆解沒辦法表達「silent e 把前面的母音變長音」，33 個 magic-e 字的母音全唸成短音（`cake` 唸 /kə æ kə/，但 a 是長音 /eɪ/）。順帶的好處是韻腳裡的塞音不必帶 schwa（前面有母音撐著），`cake` 變成乾淨的 /kə/ + /eɪk/。
+
+  **四種例外**：① `sightWord: true` 的字（`one`/`two`/`eye`/`eight`）`chunks` 留空，`speakPhonics` 會自動退回唸整字；② 母音開頭、沒有 onset 的字（`owl`/`ear`/`arm`/`eat`）拆了等於不拆，保留音素拆解；③ 多音節字目前仍是音素拆解（子音群 ch/sh/th/ck/wh/nk、母音團 ee/ea/oo/ow/ou/ay/ue/eigh/oa/aw、r 控制母音 ar/er/ir/or/ur/air/ear/our/oor、疊字 ll/rr/pp 各一個 chunk）；④ `apple`/`purple`/`turtle`/`orange`/`erasing` 的拼字音節與發音音節對不上（`e` 發 /əl/、`ange` 發 /ɪndʒ/），維持音素拆解。
 - 無合適 emoji 用 `"emoji": null, "swatch": "#hex"`。
 - 每個 chunk 文字對應一個 `public/phonics-audio/<chunk>.mp3`，**同拼法只有一份音**。同拼法不同發音時用 `phonics.audioOverrides: { "<chunk索引>": "<虛擬id>" }`（`fly`→`y-long-i`、`book`/`foot`→`oo-short`、`pear`→`ear-pear`、`heart`→`ear-heart`），虛擬 id 要先在 `tools/phonics-ipa.py` 的 `CHUNK_IPA` 登記它的 IPA。
 - 新 chunk 或新單字都要產生音檔，`tests/data-consistency.test.js` 會檢查音檔存在、串接一致、`zh` 非空、`theme` 有對應、`audioOverrides` 指向的檔案存在——加完跑 `npm test` 就知道漏了什麼。
