@@ -38,10 +38,10 @@ let lastAnimalIndex = -1;
 let phonicsAudioHandlers = null; // { onEnded, onError } —— 目前掛在 phonicsAudioEl 上的那一組監聽器
 let phonicsPlaybackId = 0; // 每次呼叫 speakPhonics() 就 +1，播放序列裡每一步都檢查序號是否還是最新的
 
-// chunk 之間的停頓（毫秒）。在修掉 generate-neural-audio.py 的 afade 絕對時間
-// bug 之前，每個 phonics 音檔尾端都拖著一段被淡成靜音的尾巴（實測 0.2 秒以上），
-// 播放序列靠 `ended` 推進，那段空白就是 chunk 之間的節奏來源。音檔修乾淨之後
-// 尾端只剩 mp3 編碼 padding，chunk 會黏成一團，所以節奏改由播放層明確控制。
+// chunk 之間的停頓（毫秒）。早期的 phonics 音檔尾端都拖著一段被淡成靜音的尾巴
+// （實測 0.2 秒以上，ffmpeg 濾鏡的 bug），播放序列靠 `ended` 推進，那段空白就
+// 意外成了 chunk 之間的節奏來源。音檔修乾淨之後尾端只剩 mp3 編碼 padding，chunk
+// 會黏成一團，所以節奏改由播放層明確控制。
 let phonicsChunkGapMs = 130;
 // 最後一個 chunk 到整個單字之間停久一點，讓「c－a－t …… cat」的分段感出得來。
 let phonicsWordGapMs = 260;

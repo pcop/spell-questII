@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """phonics chunk → IPA 對照表（給 Azure Speech SSML <phoneme alphabet="ipa"> 用）
 
-這張表要取代 generate-neural-audio.py 的整套 CHUNK_CONFIG 裁切機制。舊作法是
-「合成完整載體單字 → 用秒數把音素切出來」，裁切點只能靠能量/過零率反推，濁子音
-那批（moon/blue/bird/door/book）正是啟發式失效的地方；直接給 IPA 就沒有邊界問題。
+這張表取代了早期「合成完整載體單字 → 用秒數把音素切出來」的裁切機制：裁切點只能
+靠能量/過零率反推，而濁子音那批（moon/blue/bird/door/book）的子音與母音在這兩個
+指標上分不開。直接給 IPA 就沒有邊界可以切錯。
 
 ### 哪些音要帶 schwa（全部經過實測）
 
@@ -125,19 +125,28 @@ def ssml_for_chunk(chunk: str, voice: str = "en-US-JennyNeural") -> str:
 
 
 if __name__ == "__main__":
-    import os, sys
-    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-    ns = {"__file__": os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                                   "generate-neural-audio.py")}
-    src = open(ns["__file__"], encoding="utf-8").read().replace("asyncio.run(main())", "pass")
-    exec(compile(src, ns["__file__"], "exec"), ns)
-    cfg = ns["CHUNK_CONFIG"]
+    import json
+    import os
 
-    missing = sorted(set(cfg) - set(CHUNK_IPA))
-    extra = sorted(set(CHUNK_IPA) - set(cfg))
-    print(f"CHUNK_CONFIG {len(cfg)} 個 / IPA 表 {len(CHUNK_IPA)} 個")
-    print(f"  缺 IPA: {missing or '無'}")
-    print(f"  多出來: {extra or '無'}")
+    # 直接對照 data.json 實際用到的 chunk——這才是真正要涵蓋的集合。
+    # （早期是對照 generate-neural-audio.py 的 CHUNK_CONFIG，那支腳本已經退休。）
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    with open(os.path.join(root, "src", "data", "data.json"), encoding="utf-8") as f:
+        data = json.load(f)
+
+    used = set()
+    for entry in data["wordBank"]:
+        ph = entry.get("phonics") or {}
+        for i, chunk in enumerate(ph.get("chunks", [])):
+            override = (ph.get("audioOverrides") or {}).get(str(i))
+            used.add(override or chunk)
+
+    missing = sorted(used - set(CHUNK_IPA))
+    unused = sorted(set(CHUNK_IPA) - used)
+    print(f"data.json 用到 {len(used)} 個 chunk / IPA 表有 {len(CHUNK_IPA)} 個")
+    print(f"  缺 IPA（會壞）: {missing or '無'}")
+    print(f"  表裡有但沒人用: {unused or '無'}")
     print()
     for chunk, (ipa, note) in CHUNK_IPA.items():
-        print(f"  {chunk:<11} /{ipa}/{'':<{max(0, 8 - len(ipa))}}  {note}")
+        mark = " " if chunk in used else "·"
+        print(f" {mark}{chunk:<11} /{ipa}/{'':<{max(0, 8 - len(ipa))}}  {note}")

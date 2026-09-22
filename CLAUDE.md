@@ -27,27 +27,47 @@ npx vitest run -t "錯題複習"                 # 依測試名稱過濾
 
 ### 新增單字後產生音檔
 
-```bash
-python3 tools/generate-neural-audio.py      # 全部重新生成（Edge-TTS + ffmpeg，需網路）
-```
-全跑會覆蓋所有既有音檔，通常不要這樣做。phonics 支援部分生成與換輸出目錄：
+音檔全部由 **Azure Speech 官方 API** 生成（`en-US-JennyNeural`）。需要環境變數：
 
 ```bash
-python3 tools/generate-neural-audio.py --phonics --chunks=ee,oo --out-dir=/tmp/試聽
+export AZURE_SPEECH_KEY='...'      # Speech resource 的 KEY 1
+export AZURE_SPEECH_REGION='eastasia'
+python3 tools/generate-azure-audio.py --all    # 增量：只產生缺的或參數變了的
 ```
 
-只生成新單字音檔的做法是 `exec` 這支腳本的模組內容後直接呼叫 `generate_tts()` + `process_word_audio()`（腳本頂層有 `asyncio.run(main())`，要先把那兩行 strip 掉，並塞 `__file__` 進 exec 的 namespace 讓 `ROOT_DIR` 算得出來）。
+**`--all` 是安全的**：`tools/audio-manifest.json` 記錄每個檔案的生成參數指紋（文字/IPA、語音、語速、輸出格式），沒變動的一律略過。加了新單字就跑這行，只有新的那幾個會送去合成。其他選項：
 
-**音檔一定要驗過兩件事**，兩個檢查都內建在腳本的輸出裡：
+```bash
+--words --letters --phonics       # 只跑某一類
+--chunks=ee,oo --out-dir=/tmp/x   # 小樣本生成到別處試聽，不碰 public/
+--force                           # 忽略 manifest 全量重生
+--reindex                         # 不呼叫 API，只用現有檔案重建 manifest
+```
 
-1. `ffmpeg -i <f> -af volumedetect -f null - 2>&1 | grep mean_volume`，`-91.0 dB` 代表完全靜音（根因是 `atrim` 後沒 `asetpts=PTS-STARTPTS`，已修）。
-2. `ffmpeg -i <f> -af silencedetect=n=-50dB:d=0.02 -f null -`，比對 `silence_start` 與總長度——**尾端有大段靜音代表音檔被截斷**。只驗 mean_volume 抓不到這種情形：混著靜音尾巴的 mean 看起來完全正常，`afade` 用絕對時間寫死淡出點那個 bug（見下）就是這樣潛伏了很久。
+免費層 F0 每月 50 萬字元，全部 204 個音檔加起來約 3 萬字元，跑十幾次都還在額度內。
 
-#### phonics 音檔的三個已知地雷
+**manifest 的 key 一定要帶類別前綴**（`phonics/a.mp3`）。三個目錄的檔名會撞——`a.mp3` 同時是字母 A 與音素 /æ/，`ear.mp3`/`eye.mp3` 又同時是單字，共 28 個重名；只用檔名當 key 它們會互相覆蓋，指紋永遠對不上，每次都被判定成「要重生」。
 
-- **`afade` 淡出絕對不能用 `t=out:st=<秒>`**。afade 的 `st` 是片段內的絕對時間，寫死 `st=0.2:d=0.04` 等於「所有音檔一律在 0.24 秒歸零並永遠保持靜音」，而 59 個音素裡有 43 個比這長——它們的後半段全被淡成 −91dB（長母音被砍掉近半、短母音連載體字的收尾子音都聽不到）。淡出要相對片段結尾：`areverse,afade=t=in:st=0:d=0.03,areverse`。
-- **音量用固定增益對齊峰值，不用 `loudnorm`**。`loudnorm` 是為 ≥3 秒素材設計的，套在 0.1～0.5 秒的音素上打不中 LUFS 目標（實測 `ck` 停在 −24dB、`ee` −15.6dB）而且會改動長度。`process_audio()` 改成兩階段：裁切淡化先輸出 WAV，量測峰值後套 `volume=<gain>dB` 並一次編成 mp3（短片段經不起兩輪 mp3 編碼）。目標 `PEAK_TARGET_DB = -3.0`。words/letters 仍用 `loudnorm`（素材夠長）。
-- **裁切視窗改了一定要用耳朵驗**。`CHUNK_CONFIG` 的 `start`/`end` 是從載體單字裡切出音素的時間窗，量測只能告訴你「有沒有被截斷」，不能告訴你「切到的是不是正確的音」。`ck`/`ll` 已改成 `{"alias": ...}` 直接複製 `k`/`l` 的成品（英語疊字只發一個音；`ck` 教學上就是 /k/），`nk` 則必須含鼻音 /ŋ/ 才聽得到，但**不能**擴成整個 "ink" 韻腳——`pink` 的 chunks 是 `p/i/nk`，那樣 /ɪ/ 會被唸兩次。
+#### phonics 音素是直接合成的，沒有裁切
+
+`tools/phonics-ipa.py` 的 `CHUNK_IPA` 是 chunk → IPA 的對照表，透過 SSML `<phoneme alphabet="ipa">` 直接合成。**加新 chunk 就是加一筆 IPA**，不必找載體單字、不必量裁切秒數。Azure 遇到不認得的 phone 會回 HTTP 400 並指出是哪個，不會默默唸錯。
+
+一代與二代早期是「合成完整載體單字 → 用秒數切出音素」，`CHUNK_CONFIG` 那套已經退休（見 `規劃.md`）。它的根本問題是裁切點只能靠能量/過零率反推，而濁子音（moon/blue/bird/door/book）的子音與母音在這兩個指標上分不開——實測把 `start` 移到程式算出的「母音起點」，開頭 40ms 的低頻能量佔比反而升高（moon 51.8%→71.5%），因為濁塞音後面那段共振峰滑向母音的過渡量起來像母音、聽起來還是 "buh"。
+
+**哪些音要帶 schwa**（`phonics-ipa.py` 檔頭有完整實測數據）：塞音與塞擦音（爆破只有 10~20ms），以及 f/θ/h/v（單獨合成只有 −34～−40dB）。其餘可持續音維持純音素靠增益拉到 `PEAK_TARGET_DB`。IPA 長音符號 `ː` Azure 完全忽略，別試。
+
+#### 音檔驗收：兩個檢查都內建在腳本輸出裡
+
+1. `mean_volume ≤ -90dB` 代表整檔靜音。
+2. **尾端靜音**：比對「有聲到哪裡」與總長度。只驗音量抓不到「後半段被淡成靜音」——混著靜音尾巴的 mean 看起來完全正常，Edge-TTS 時代 43 個音素只剩前 0.24 秒就是這樣潛伏了很久。
+   判定要**配對** `silence_start`/`silence_end`，只有「最後一段靜音延續到檔尾」才算；取第一個會把音素**內部**的閉塞誤判成截斷（`nk` 的 /ŋ/→/k/ 中間本來就有 90ms 無聲）。
+
+#### ffmpeg 濾鏡的兩個地雷
+
+- **淡出不能用 `afade=t=out:st=<絕對秒數>`**。`st` 是片段內的絕對時間，寫死就等於「所有音檔一律在某個時間點歸零並永遠保持靜音」。用 `areverse,afade=t=in,areverse` 走相對結尾。
+- **切尾端靜音要用反轉後的 `start_periods`，不是 `stop_periods`**。`stop_periods` 要求連續 `stop_duration` 秒低於門檻才切，而那個門檻必須大於音素**內部**的閉塞（約 90ms），否則會把音素攔腰切斷；可是拉到 0.1 秒就切不掉 0.12~0.16 秒的尾端殘響。反轉後尾端變成開頭，`start_periods` 只看開頭那一段，中間閉塞不受影響。
+
+單字音檔的 `silenceremove` 另有一個約束：`stop_duration` 要明顯大於單字內部塞音的閉塞停頓（實測 40~100ms），否則會把詞中停頓誤判成唸完、直接切掉後面的音節（chicken/spoon/apple/purple/duck 都曾經這樣被攔腰截斷）。
 
 ## 架構
 
@@ -134,7 +154,7 @@ key `spelling_game_progress_v2`；`loadProgress()` 讀不到時會找一代的 `
 
 - `phonics.chunks` 串接必須等於 `word`；`syllables`（選填）同理。拆法：子音群 ch/sh/th/ck/wh/nk、母音團 ee/ea/oo/ow/ou/ay/ue/eigh/oa/aw、r 控制母音 ar/er/ir/or/ur/air/ear/our/oor、疊字 ll/rr/pp 各一個 chunk；子音混合（br/pl/st）拆開。`silent` 是 chunks 的索引（silent e、`walk` 的 l）。
 - 無合適 emoji 用 `"emoji": null, "swatch": "#hex"`。
-- 每個 chunk 文字對應一個 `public/phonics-audio/<chunk>.mp3`，**同拼法只有一份音**。同拼法不同發音時用 `phonics.audioOverrides: { "<chunk索引>": "<虛擬id>" }`（`fly`→`y-long-i`、`book`/`foot`→`oo-short`、`pear`→`ear-pear`、`heart`→`ear-heart`），虛擬 id 要先在 `tools/generate-neural-audio.py` 的 `CHUNK_CONFIG` 登記載體單字與裁切秒數。
+- 每個 chunk 文字對應一個 `public/phonics-audio/<chunk>.mp3`，**同拼法只有一份音**。同拼法不同發音時用 `phonics.audioOverrides: { "<chunk索引>": "<虛擬id>" }`（`fly`→`y-long-i`、`book`/`foot`→`oo-short`、`pear`→`ear-pear`、`heart`→`ear-heart`），虛擬 id 要先在 `tools/phonics-ipa.py` 的 `CHUNK_IPA` 登記它的 IPA。
 - 新 chunk 或新單字都要產生音檔，`tests/data-consistency.test.js` 會檢查音檔存在、串接一致、`zh` 非空、`theme` 有對應、`audioOverrides` 指向的檔案存在——加完跑 `npm test` 就知道漏了什麼。
 - 自訂關卡加進 `themes[].customLevels[].wordIds`；主題可同時有 `difficultyTiers` 分級關卡跟 `customLevels`（`getLevelDefsForTheme` 兩種都吃，一代不行）。
 
