@@ -43,6 +43,8 @@
   .tag{display:inline-block;font-size:11.5px;padding:1px 7px;border-radius:99px;
     background:#eef2f7;color:var(--muted)}
   .tag.alias{background:#fef3c7;color:#92400e}
+  .tag.dimstart{background:#e0e7ff;color:#3730a3}
+  .tag.dimend{background:#dcfce7;color:#166534}
   .seq{background:var(--panel);border:1px solid var(--line);border-radius:10px;
     padding:14px 16px;margin-bottom:18px;display:flex;gap:14px;align-items:center;flex-wrap:wrap}
   .seq select,.seq input[type=range]{font:inherit}
@@ -64,8 +66,9 @@
 <main>
   <div class="hint">
     <b>聽的時候注意兩件事：</b>
-    ① <b>尾巴多餘</b>——修好截斷 bug 後，載體字後面的音會第一次出現（例如 <code>a</code> 可能聽到 "at" 的 /t/），
-    聽到就選短一點的候選。
+    ① <b>聽到載體字的其他音</b>——標「調開頭」的列是從載體字中段取母音，<code>start</code> 切太早會把前面的
+    子音帶進來（<code>ee</code> 聽起來像 "see" 就是這樣）；標「調結尾」的列則是修好截斷 bug 後，
+    載體字後面的音會第一次出現（<code>a</code> 可能聽到 "at" 的 /t/）。聽到雜音就換一個候選。
     ② <b>峰值對齊的副作用</b>——所有檔都拉到 −3 dB，擦音（s/sh/f/th）可能變得比較嘶、
     塞音（p/t/k/b）可能比較突，這是音量統一的代價，覺得過頭就寫在備註。
   </div>
@@ -140,8 +143,9 @@ function render(){
 
     const vs = r.variants.map(v=>{
       const on = chosen[r.chunk]===v.id ? 'checked' : '';
+      const val = v.dim==='start' ? v.start : v.end;
       const lbl = isAlias ? `= ${r.alias}`
-        : (v.off===0 ? `基準 ${v.end}s` : `${v.off>0?'+':''}${Math.round(v.off*1000)} ms → ${v.end}s`);
+        : (v.off===0 ? `基準 ${val}s` : `${v.off>0?'+':''}${Math.round(v.off*1000)} ms → ${val}s`);
       return `<div class="variant">
         <label><input type="radio" name="r_${r.chunk}" value="${v.id}" ${on}>${lbl}</label>
         <button class="play" data-src="new/${v.id}.mp3">▶</button>
@@ -154,7 +158,10 @@ function render(){
 
     tr.innerHTML = `
       <td><span class="chunk">${r.chunk}</span>${isAlias?' <span class="tag alias">別名</span>':''}</td>
-      <td class="carrier">${isAlias? '—' : r.word + '<br><span class="len">' + r.start + '–' + r.cur_end + 's</span>'}</td>
+      <td class="carrier">${isAlias? '—' :
+          r.word + '<br><span class="len">' + r.cur_start + '–' + r.cur_end + 's</span>' +
+          '<br><span class="tag ' + (r.dim==='start'?'dimstart':'dimend') + '">調' +
+          (r.dim==='start'?'開頭':'結尾') + '</span>'}</td>
       <td><button class="play old" data-src="old/${r.chunk}.mp3">▶</button>${oldWarn}</td>
       <td>${vs}</td>
       <td><img class="wave" id="w_${r.chunk}" src="wave/${chosen[r.chunk]||r.chunk}.png" alt=""></td>
@@ -240,10 +247,10 @@ document.getElementById('copy').addEventListener('click', ()=>{
     const id = chosen[r.chunk];
     if(!id) continue;
     const v = r.variants.find(x=>x.id===id);
-    out.chunks[r.chunk] = { end: v.end, note: notes[r.chunk]||'' };
+    out.chunks[r.chunk] = { start: v.start, end: v.end, dim: v.dim, note: notes[r.chunk]||'' };
   }
   for(const [c,n] of Object.entries(notes)){
-    if(n && !out.chunks[c]) out.chunks[c] = { end: null, note: n };
+    if(n && !out.chunks[c]) out.chunks[c] = { start: null, end: null, note: n };
   }
   const text = JSON.stringify(out,null,1);
   const b = document.getElementById('copy');

@@ -52,7 +52,9 @@ def envelope(mp3):
     x = np.frombuffer(subprocess.run(cmd, capture_output=True).stdout, dtype=np.int16).astype(np.float32) / 32768
     n = int(SR * F); nf = len(x) // n
     fr = x[:nf * n].reshape(nf, n)
-    return 20 * np.log10(np.sqrt((fr ** 2).mean(1) + 1e-12))
+    db = 20 * np.log10(np.sqrt((fr ** 2).mean(1) + 1e-12))
+    zcr = (np.diff(np.sign(fr), axis=1) != 0).sum(1) / n
+    return db, zcr
 
 
 def base_end(chunk, cfg, db):
@@ -67,18 +69,58 @@ def base_end(chunk, cfg, db):
     return cfg["end"], "沿用現值"
 
 
-def variants_for(chunk, cfg, base):
-    """三個候選。子音修好 fade 後最可能「多帶了母音」，所以往短的方向探；
-    母音類則左右各探一格。"""
-    if chunk in VOWEL_FIRST or cfg["start"] > 0:
-        offs = [0.0, -0.04, +0.04]
-    else:
-        offs = [0.0, -0.06, -0.12]
+# 清音開頭的載體字：/s/ /f/ /h/ /k/ /p/ /t/ /ʃ/ /θ/ 跟後面的母音在能量與 ZCR
+# 上界線分明，程式抓得準。濁子音開頭（m/b/d/l/r/n/v/z/g/w）本身就是濁音、
+# 低 ZCR、能量不低，跟母音在這兩個指標上分不開，只能沿用現值靠耳朵校。
+VOICELESS_ONSET = ("s", "f", "h", "k", "c", "p", "t", "sh", "th")
+
+
+# 目標音素**不是**載體字的第一個母音——「抓第一個母音起點」對這些是錯的：
+#   y   = happy 第二音節的 /i/（第一個母音是 /æ/）
+#   x   = box 字尾的 /ks/
+#   nk  = pink 字尾的 /ŋk/（第一個母音是 /ɪ/，抓到它等於把母音也切進來）
+TAIL_CHUNKS = {"y", "x", "nk"}
+
+
+def base_start(chunk, cfg, db, zcr):
+    """基準 start：載體字是清音開頭、且目標就是第一個母音時抓母音起點，否則沿用現值"""
+    if cfg["start"] <= 0:
+        return 0.0, ""
+    word = cfg["word"]
+    if chunk in TAIL_CHUNKS:
+        return cfg["start"], f"沿用現值（目標在 {word} 的字尾，不是第一個母音）"
+    if not word.startswith(VOICELESS_ONSET):
+        return cfg["start"], "沿用現值（濁子音開頭，程式分不出邊界）"
+    peak = db.max()
+    voiced = [(db[i] > peak - 10 and zcr[i] < 0.12) for i in range(len(db))]
+    for i in range(len(voiced) - 2):
+        if voiced[i] and voiced[i + 1] and voiced[i + 2]:
+            return round(i * F, 3), f"母音起點（{word} 的子音到 {i * F:.2f}s）"
+    return cfg["start"], "沿用現值（抓不到母音起點）"
+
+
+def variants_for(chunk, cfg, bstart, bend):
+    """三個候選 (start, end)。
+
+    調的維度看 chunk 的性質：
+    - start > 0（從載體字中段取母音）：問題在**開頭**——start 切太早會把載體字
+      的子音一起帶進來（ee 聽起來像 see）。所以左右各探 40ms，end 固定。
+    - start = 0（從字首取子音，或載體字本身就是母音開頭）：問題在**結尾**——
+      修好 fade 截斷後會第一次帶出載體字後面的音。子音往短的方向探，母音
+      左右各探。
+    """
     out = []
-    for o in offs:
-        e = round(base + o, 3)
-        if e > cfg["start"] + 0.05:
-            out.append((round(o, 3), e))
+    if cfg["start"] > 0:
+        for o in (0.0, +0.04, -0.04):
+            st = round(bstart + o, 3)
+            if 0 <= st < bend - 0.05:
+                out.append({"dim": "start", "off": round(o, 3), "start": st, "end": bend})
+    else:
+        offs = [0.0, -0.04, +0.04] if chunk in VOWEL_FIRST else [0.0, -0.06, -0.12]
+        for o in offs:
+            e = round(bend + o, 3)
+            if e > 0.05:
+                out.append({"dim": "end", "off": round(o, 3), "start": 0.0, "end": e})
     return out
 
 
@@ -123,20 +165,25 @@ async def main():
             continue
 
         raw = await ensure_raw(cfg["word"])
-        db = envelope(raw)
-        base, why = base_end(chunk, cfg, db)
+        db, zcr = envelope(raw)
+        bend, why_e = base_end(chunk, cfg, db)
+        bstart, why_s = base_start(chunk, cfg, db, zcr)
         vs = []
-        for i, (off, end) in enumerate(variants_for(chunk, cfg, base)):
+        for i, v in enumerate(variants_for(chunk, cfg, bstart, bend)):
             name = f"{chunk}__v{i}"
             f = os.path.join(OUT, "new", f"{name}.mp3")
-            process_audio(raw, f, start=cfg["start"], end=end)
+            process_audio(raw, f, start=v["start"], end=v["end"])
             wave_png(f, os.path.join(OUT, "wave", f"{name}.png"))
-            d, v, mx = probe(f)
-            vs.append({"id": name, "off": off, "end": end, "dur": d, "voiced": v, "max": mx})
-        rows.append({"chunk": chunk, "word": cfg["word"], "start": cfg["start"],
-                     "cur_end": cfg["end"], "base": base, "why": why,
+            d, vo, mx = probe(f)
+            vs.append({"id": name, **v, "dur": d, "voiced": vo, "max": mx})
+        dim = vs[0]["dim"] if vs else "end"
+        rows.append({"chunk": chunk, "word": cfg["word"],
+                     "cur_start": cfg["start"], "cur_end": cfg["end"],
+                     "base_start": bstart, "base_end": bend, "dim": dim,
+                     "why": why_s if dim == "start" else why_e,
                      "old": {"dur": od, "voiced": ov, "max": omx}, "variants": vs})
-        print(f"  {chunk:<10} {cfg['word']:<8} base={base:.2f} ({why})  變體={[v['end'] for v in vs]}")
+        span = [f"{v['start']}-{v['end']}" for v in vs]
+        print(f"  {chunk:<10} {cfg['word']:<8} 調{dim:<5} {span}  {why_s if dim=='start' else why_e}")
 
     # 別名的成品：複製 v0
     for r in rows:
@@ -147,7 +194,8 @@ async def main():
             shutil.copyfile(src, dst)
             wave_png(dst, os.path.join(OUT, "wave", f"{r['chunk']}__v0.png"))
             d, v, mx = probe(dst)
-            r["variants"] = [{"id": f"{r['chunk']}__v0", "off": 0, "end": None,
+            r["variants"] = [{"id": f"{r['chunk']}__v0", "dim": "alias", "off": 0,
+                              "start": None, "end": None,
                               "dur": d, "voiced": v, "max": mx}]
 
     json.dump(rows, open(os.path.join(OUT, "rows.json"), "w"), ensure_ascii=False, indent=1)
