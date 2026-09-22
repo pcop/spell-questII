@@ -434,7 +434,11 @@
         ],
         "silent": [
           4
-        ]
+        ],
+        "audioOverrides": {
+          "1": "i",
+          "3": "j"
+        }
       }
     },
     {
@@ -1800,13 +1804,12 @@
         "chunks": [
           "e",
           "r",
-          "a",
-          "s",
-          "i",
-          "n",
-          "g"
+          "as",
+          "ing"
         ],
-        "silent": []
+        "audioOverrides": {
+          "0": "i"
+        }
       }
     },
     {

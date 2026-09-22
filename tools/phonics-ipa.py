@@ -197,6 +197,9 @@ CHUNK_IPA = {
     "a-schwa":   ("ə",      "非重音音節的 a（zebra/banana/koala）"),
     "en-schwa":  ("ən",     "非重音音節的 en（seven/chicken）"),
 
+    # erasing 的第二音節 -as-：a 是 magic e 的長音、s 在母音間濁化成 /z/
+    "as":        ("eɪz",  "erasing 的 r-as；s 濁化"),
+
     # ---- 別名：英語疊字只發一個音 ----
     "ck":        ("kə",   "= k"),
     "ll":        ("l",    "= l"),

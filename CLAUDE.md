@@ -158,7 +158,7 @@ key `spelling_game_progress_v2`；`loadProgress()` 讀不到時會找一代的 `
   
   改用 onset-rime 是為了修一個教學錯誤：音素拆解沒辦法表達「silent e 把前面的母音變長音」，33 個 magic-e 字的母音全唸成短音（`cake` 唸 /kə æ kə/，但 a 是長音 /eɪ/）。順帶的好處是韻腳裡的塞音不必帶 schwa（前面有母音撐著），`cake` 變成乾淨的 /kə/ + /eɪk/。
 
-  **四種例外**：① `sightWord: true` 的字（`one`/`two`/`eye`/`eight`）`chunks` 留空，`speakPhonics` 會自動退回唸整字；② 母音開頭、沒有 onset 的字（`owl`/`ear`/`arm`/`eat`）拆了等於不拆，保留音素拆解；③ `apple`/`purple`/`turtle`/`orange`/`erasing` 的拼字音節與發音音節對不上（`e` 發 /əl/、`ange` 發 /ɪndʒ/），維持音素拆解（子音群 ch/sh/th/ck/wh/nk、母音團 ee/ea/oo/ow/ou/ay/ue/eigh/oa/aw、r 控制母音 ar/er/ir/or/ur/air/ear/our/oor、疊字 ll/rr/pp 各一個 chunk）。
+  **四種例外**：① `sightWord: true` 的字（`one`/`two`/`eye`/`eight`）`chunks` 留空，`speakPhonics` 會自動退回唸整字；② 母音開頭、沒有 onset 的字（`owl`/`ear`/`arm`/`eat`）拆了等於不拆，保留音素拆解；③ `apple`/`purple`/`turtle`/`orange` 的拼字音節與發音音節對不上（`ple`/`tle` 的 `e` 要發 /əl/、`ange` 要發 /ɪndʒ/），維持音素拆解（子音群 ch/sh/th/ck/wh/nk、母音團 ee/ea/oo/ow/ou/ay/ue/eigh/oa/aw、r 控制母音 ar/er/ir/or/ur/air/ear/our/oor、疊字 ll/rr/pp 各一個 chunk）。
 
   **多音節字先切音節、每個音節再 onset-rime**：`chicken` → `["ch","i","ck","en"]`、`coloring` → `["c","ol","or","ing"]`、`banana` → `["b","a","n","an","a"]`。
 
