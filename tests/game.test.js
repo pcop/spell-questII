@@ -167,6 +167,29 @@ describe('getLevelDefsForTheme', () => {
     const lengths = new Set(words.map((w) => w.word.length));
     expect(lengths.size).toBeGreaterThan(1);
   });
+
+  it('混合主題（numbers）：同時保留初/中/高級三個分級關卡，並附上 0 到 10 自訂關卡', () => {
+    const defs = getLevelDefsForTheme('numbers');
+    expect(defs).toHaveLength(4);
+    expect(defs.slice(0, 3).map((d) => d.key)).toEqual(['1', '2', '3']);
+    expect(defs.slice(0, 3).every((d) => d.kind === 'tier')).toBe(true);
+
+    const allZeroToTen = defs[3];
+    expect(allZeroToTen).toMatchObject({
+      key: '0_to_10',
+      kind: 'custom',
+      wordCount: 11,
+      playable: true,
+    });
+    expect(allZeroToTen.label).toContain('0 到 10');
+
+    const words = getWordsForLevel('numbers', '0_to_10');
+    expect(words.map((w) => w.word)).toEqual([
+      'zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten',
+    ]);
+    // 既有的分級關卡一樣能正常取字
+    expect(getWordsForLevel('numbers', '1')).toHaveLength(4);
+  });
 });
 
 describe('getValidLevelCombos / getAllWordsForTheme', () => {
@@ -406,7 +429,7 @@ describe('錯題複習虛擬關卡（getLevelDefsForTheme / getWordsForLevel）'
     seedWordProgress(storage, 'numbers', '1', 'number_one', 0, 1);
 
     const defs = getLevelDefsForTheme('numbers');
-    expect(defs).toHaveLength(4); // 原本 3 個 tier + 1 個 review
+    expect(defs).toHaveLength(5); // 原本 3 個 tier + 1 個 custom (0_to_10) + 1 個 review
 
     const review = defs[defs.length - 1];
     expect(review.key).toBe('review');

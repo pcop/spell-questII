@@ -1923,7 +1923,27 @@
       "id": "numbers",
       "name": "數字",
       "icon": "🔢",
-      "color": "#8ecae6"
+      "color": "#8ecae6",
+      "customLevels": [
+        {
+          "id": "0_to_10",
+          "label": "0 到 10",
+          "distractorCount": 2,
+          "wordIds": [
+            "number_zero",
+            "number_one",
+            "number_two",
+            "number_three",
+            "number_four",
+            "number_five",
+            "number_six",
+            "number_seven",
+            "number_eight",
+            "number_nine",
+            "number_ten"
+          ]
+        }
+      ]
     },
     {
       "id": "fruits",
@@ -1948,6 +1968,7 @@
       "name": "其他",
       "icon": "🧩",
       "color": "#9b5de5",
+      "onlyCustomLevels": true,
       "customLevels": [
         {
           "id": "summer_review_1",

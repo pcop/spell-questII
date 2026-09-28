@@ -147,13 +147,28 @@ export function getThemes() {
  */
 export function getLevelDefsForTheme(themeId) {
   const theme = findTheme(themeId);
-  let defs;
+  const defs = [];
+
+  if (!theme || !theme.onlyCustomLevels) {
+    DIFFICULTY_TIERS.forEach((tierDef) => {
+      const words = wordsForTier(themeId, tierDef);
+      const lenLabel = tierDef.minLen === tierDef.maxLen ? `${tierDef.minLen} 字母` : `${tierDef.minLen}+ 字母`;
+      defs.push({
+        key: String(tierDef.tier),
+        kind: 'tier',
+        label: `${tierDef.label}（${lenLabel}）`,
+        distractorCount: tierDef.distractorCount,
+        wordCount: words.length,
+        playable: words.length >= MIN_WORDS_PER_LEVEL,
+      });
+    });
+  }
 
   if (theme && theme.customLevels && theme.customLevels.length) {
-    defs = theme.customLevels.map((lvl) => {
+    theme.customLevels.forEach((lvl) => {
       const words = wordsForCustomLevel(lvl);
       const wordCount = words.length;
-      return {
+      defs.push({
         key: String(lvl.id),
         // 新增欄位（原本沒有）：讓呼叫端能用同一個欄位分辨 tier/custom/review
         // 三種關卡來源，見下方 review 虛擬關卡的說明。
@@ -162,20 +177,7 @@ export function getLevelDefsForTheme(themeId) {
         distractorCount: lvl.distractorCount != null ? lvl.distractorCount : 2,
         wordCount,
         playable: wordCount >= MIN_WORDS_PER_LEVEL,
-      };
-    });
-  } else {
-    defs = DIFFICULTY_TIERS.map((tierDef) => {
-      const words = wordsForTier(themeId, tierDef);
-      const lenLabel = tierDef.minLen === tierDef.maxLen ? `${tierDef.minLen} 字母` : `${tierDef.minLen}+ 字母`;
-      return {
-        key: String(tierDef.tier),
-        kind: 'tier',
-        label: `${tierDef.label}（${lenLabel}）`,
-        distractorCount: tierDef.distractorCount,
-        wordCount: words.length,
-        playable: words.length >= MIN_WORDS_PER_LEVEL,
-      };
+      });
     });
   }
 
@@ -238,7 +240,7 @@ export function getWordsForLevel(themeId, levelKey) {
 
   if (theme && theme.customLevels && theme.customLevels.length) {
     const lvl = theme.customLevels.find((l) => String(l.id) === key);
-    return lvl ? wordsForCustomLevel(lvl) : [];
+    if (lvl) return wordsForCustomLevel(lvl);
   }
 
   const tierDef = DIFFICULTY_TIERS.find((t) => String(t.tier) === key);
