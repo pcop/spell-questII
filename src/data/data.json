@@ -1904,6 +1904,166 @@
           "ing"
         ]
       }
+    },
+    {
+      "id": "other_monday",
+      "word": "monday",
+      "theme": "other",
+      "emoji": "🌙",
+      "zh": "星期一",
+      "syllables": [
+        "mon",
+        "day"
+      ],
+      "phonics": {
+        "chunks": [
+          "m",
+          "on",
+          "d",
+          "ay"
+        ],
+        "audioOverrides": {
+          "1": "un"
+        }
+      }
+    },
+    {
+      "id": "other_tuesday",
+      "word": "tuesday",
+      "theme": "other",
+      "emoji": "🔥",
+      "zh": "星期二",
+      "syllables": [
+        "tues",
+        "day"
+      ],
+      "phonics": {
+        "chunks": [
+          "t",
+          "ue",
+          "s",
+          "d",
+          "ay"
+        ],
+        "audioOverrides": {
+          "2": "z"
+        }
+      }
+    },
+    {
+      "id": "other_wednesday",
+      "word": "wednesday",
+      "theme": "other",
+      "emoji": "💧",
+      "zh": "星期三",
+      "syllables": [
+        "wednes",
+        "day"
+      ],
+      "phonics": {
+        "chunks": [
+          "w",
+          "e",
+          "d",
+          "n",
+          "e",
+          "s",
+          "d",
+          "ay"
+        ],
+        "silent": [
+          2,
+          4
+        ],
+        "audioOverrides": {
+          "5": "z"
+        }
+      }
+    },
+    {
+      "id": "other_thursday",
+      "word": "thursday",
+      "theme": "other",
+      "emoji": "🌳",
+      "zh": "星期四",
+      "syllables": [
+        "thurs",
+        "day"
+      ],
+      "phonics": {
+        "chunks": [
+          "th",
+          "ur",
+          "s",
+          "d",
+          "ay"
+        ],
+        "audioOverrides": {
+          "2": "z"
+        }
+      }
+    },
+    {
+      "id": "other_friday",
+      "word": "friday",
+      "theme": "other",
+      "emoji": "⭐",
+      "zh": "星期五",
+      "syllables": [
+        "fri",
+        "day"
+      ],
+      "phonics": {
+        "chunks": [
+          "fr",
+          "i",
+          "d",
+          "ay"
+        ],
+        "audioOverrides": {
+          "1": "y-long-i"
+        }
+      }
+    },
+    {
+      "id": "other_saturday",
+      "word": "saturday",
+      "theme": "other",
+      "emoji": "🪐",
+      "zh": "星期六",
+      "syllables": [
+        "sat",
+        "ur",
+        "day"
+      ],
+      "phonics": {
+        "chunks": [
+          "s",
+          "at",
+          "ur",
+          "d",
+          "ay"
+        ]
+      }
+    },
+    {
+      "id": "other_sunday",
+      "word": "sunday",
+      "theme": "other",
+      "emoji": "☀️",
+      "zh": "星期日",
+      "syllables": [
+        "sun",
+        "day"
+      ],
+      "phonics": {
+        "chunks": [
+          "s",
+          "un",
+          "d",
+          "ay"
+        ]
+      }
     }
   ],
   "themes": [
@@ -2064,6 +2224,20 @@
             "other_counting",
             "other_coloring",
             "other_crayons"
+          ]
+        },
+        {
+          "id": "days_of_week",
+          "label": "星期一到星期天",
+          "distractorCount": 2,
+          "wordIds": [
+            "other_monday",
+            "other_tuesday",
+            "other_wednesday",
+            "other_thursday",
+            "other_friday",
+            "other_saturday",
+            "other_sunday"
           ]
         }
       ]

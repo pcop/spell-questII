@@ -638,6 +638,9 @@
  "words/fox.mp3": {
   "sig": "d74d9498b46507a7"
  },
+ "words/friday.mp3": {
+  "sig": "8c7893ed14521448"
+ },
  "words/frog.mp3": {
   "sig": "92f70b1b468091de"
  },
@@ -719,6 +722,9 @@
  "words/melon.mp3": {
   "sig": "2f599d7513d7bfc1"
  },
+ "words/monday.mp3": {
+  "sig": "96cfb4233ae34317"
+ },
  "words/mouth.mp3": {
   "sig": "ddaf2d2745a5815f"
  },
@@ -776,6 +782,9 @@
  "words/run.mp3": {
   "sig": "dd694e753ee88941"
  },
+ "words/saturday.mp3": {
+  "sig": "fdbb98ad3046c30b"
+ },
  "words/seven.mp3": {
   "sig": "68376ef537ce8ef1"
  },
@@ -800,6 +809,9 @@
  "words/spoon.mp3": {
   "sig": "53c9c9de3b544a5e"
  },
+ "words/sunday.mp3": {
+  "sig": "04c5ed74961d4ba5"
+ },
  "words/swim.mp3": {
   "sig": "c536570866835071"
  },
@@ -818,6 +830,9 @@
  "words/three.mp3": {
   "sig": "76321d125aec89c7"
  },
+ "words/thursday.mp3": {
+  "sig": "3c3707c9a6bb9f68"
+ },
  "words/tiger.mp3": {
   "sig": "e31b8a2afda20d9e"
  },
@@ -826,6 +841,9 @@
  },
  "words/tooth.mp3": {
   "sig": "4d53e0440ffae352"
+ },
+ "words/tuesday.mp3": {
+  "sig": "332510c16ea194c5"
  },
  "words/turtle.mp3": {
   "sig": "9c818ec7297f74d1"
@@ -844,6 +862,9 @@
  },
  "words/wave.mp3": {
   "sig": "3e5e3490f5404b89"
+ },
+ "words/wednesday.mp3": {
+  "sig": "93215576da3351f9"
  },
  "words/white.mp3": {
   "sig": "dc6bf53c96ee8f6b"
